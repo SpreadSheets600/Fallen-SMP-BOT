@@ -34,6 +34,8 @@ SFTP_PORT = 2022
 SFTP_PASSWORD = "&zS&fXywE@QBRr5"
 LOG_FILE_PATH = "/logs/latest.log"
 
+ADMINS = [727012870683885578, 437622938242514945, 243042987922292738, 664157606587138048, 1188730953217097811]
+
 conn = sqlite3.connect("User.db")
 cursor = conn.cursor()
 
@@ -338,7 +340,7 @@ async def info(ctx: discord.ApplicationContext):
 @bot.slash_command(name="reconnect", description="Reconnects To The Server SFTP")
 async def reconnect(ctx):
 
-    if ctx.author.id in [1188730953217097811, 664157606587138048, 727012870683885578]:
+    if ctx.author.id in ADMINS:
 
         await ctx.defer()
         global sftp_client, transport
@@ -364,44 +366,49 @@ async def reconnect(ctx):
 @bot.slash_command(name="playerinfo", description="Get Your Player Info")
 async def playerinfo(ctx: discord.ApplicationContext):
 
-    conn = sqlite3.connect("User.db")
-    cursor = conn.cursor()
+    if ctx.author.id in ADMINS:
 
-    cursor.execute(
-        "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
-    )
-    rows = cursor.fetchall()
-    row = rows[0]
+        conn = sqlite3.connect("User.db")
+        cursor = conn.cursor()
 
-    if rows:
-        embed = discord.Embed(
-            title=":bust_in_silhouette: Player Information",
-            description=f"Details for **{ctx.author.display_name}** \n :id: Application ID : {row[0]}",
-            color=discord.Color.green(),
+        cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
         )
-
+        rows = cursor.fetchall()
         row = rows[0]
 
-        embed.add_field(
-            name=":bust_in_silhouette: Discord User ID",
-            value=f"{row[1]}({str(ctx.author.display_name)})",
-            inline=False,
-        )
-        embed.add_field(name=":pick: Minecraft Username", value=row[2], inline=False)
+        if rows:
+            embed = discord.Embed(
+                title=":bust_in_silhouette: Player Information",
+                description=f"Details for **{ctx.author.display_name}** \n :id: Application ID : {row[0]}",
+                color=discord.Color.green(),
+            )
 
-        embed.set_thumbnail(url=ctx.author.avatar.url)
-        embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
+            row = rows[0]
 
-        await ctx.respond(embed=embed, view=View_Character_Info(ctx.author.id))
+            embed.add_field(
+                name=":bust_in_silhouette: Discord User ID",
+                value=f"{row[1]}({str(ctx.author.display_name)})",
+                inline=False,
+            )
+            embed.add_field(name=":pick: Minecraft Username", value=row[2], inline=False)
+
+            embed.set_thumbnail(url=ctx.author.avatar.url)
+            embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
+
+            await ctx.respond(embed=embed, view=View_Character_Info(ctx.author.id))
+        else:
+            embed = discord.Embed(
+                title=":x: Player Data Not Found",
+                description="It Seems Like There Isn't Any Data For You. Make Sure To Sumbit The Whitelist Application.",
+                color=discord.Color.red(),
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+
+        conn.close()
+
     else:
-        embed = discord.Embed(
-            title=":x: Player Data Not Found",
-            description="It Seems Like There Isn't Any Data For You. Make Sure To Sumbit The Whitelist Application.",
-            color=discord.Color.red(),
-        )
-        await ctx.respond(embed=embed, ephemeral=True)
-
-    conn.close()
+        await ctx.send("Laude Server To Live Hone De :F", ephemeral=True)
 
 
 @bot.slash_command(
@@ -409,7 +416,7 @@ async def playerinfo(ctx: discord.ApplicationContext):
 )
 async def del_whitelist(ctx: discord.ApplicationContext, member: discord.Member):
 
-    if ctx.author.id in [1188730953217097811, 664157606587138048, 727012870683885578]:
+    if ctx.author.id in ADMINS:
 
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
@@ -448,7 +455,7 @@ async def del_whitelist(ctx: discord.ApplicationContext, member: discord.Member)
 @bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
 async def show_whitelist(ctx: discord.ApplicationContext):
 
-    if ctx.author.id in [ 664157606587138048, 727012870683885578]:
+    if ctx.author.id in ADMINS:
 
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
@@ -488,37 +495,43 @@ async def show_whitelist(ctx: discord.ApplicationContext):
 @bot.slash_command(name="whitelist", description="Get WhiteListed On Fallen SMP")
 async def whitelist(ctx):
 
-    conn = sqlite3.connect("User.db")
-    cursor = conn.cursor()
+    if ctx.author.id in ADMINS:
+        conn = sqlite3.connect("User.db")
+        cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
-    )
-    row = cursor.fetchone()
-
-    if row:
-        embed = discord.Embed(
-            title=":white_check_mark: Already Whitelisted",
-            description="You Are Already Whitelisted On Fallen SMP.\n** If U Messed Up Ur Application, Contact <@979191620610170950> Or <@664157606587138048>**",
-            color=discord.Color.green(),
+        cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
         )
-        await ctx.respond(embed=embed, ephemeral=True)
+        row = cursor.fetchone()
+
+        if row:
+            embed = discord.Embed(
+                title=":white_check_mark: Already Whitelisted",
+                description="You Are Already Whitelisted On Fallen SMP.\n** If U Messed Up Ur Application, Contact <@979191620610170950> Or <@664157606587138048>**",
+                color=discord.Color.green(),
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+        else:
+            embed = discord.Embed(
+                title="Whitelist Application",
+                description="Please Fill Out The Form By Clicking The Button Below",
+                color=discord.Color.green(),
+            )
+            embed.add_field(name="Server IP", value="play.fallensmp.xyz", inline=True)
+            embed.add_field(name="Server Version", value="1.21.1", inline=True)
+
+            embed.set_image(
+                url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a3b94d&is=66a267cd&hm=b80fdae6a297eeb179347003f57935b5edf601dfbb5433937e9cbb4a9f1493c5&=&width=1024&height=320"
+            )
+
+            await ctx.respond(
+                embed=embed, view=Whitelist_View(interaction_user=ctx.user), ephemeral=True
+            )
+
+        conn.close()
+
     else:
-        embed = discord.Embed(
-            title="Whitelist Application",
-            description="Please Fill Out The Form By Clicking The Button Below",
-            color=discord.Color.green(),
-        )
-        embed.add_field(name="Server IP", value="play.fallensmp.xyz", inline=True)
-        embed.add_field(name="Server Version", value="1.21.1", inline=True)
-
-        embed.set_image(
-            url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a3b94d&is=66a267cd&hm=b80fdae6a297eeb179347003f57935b5edf601dfbb5433937e9cbb4a9f1493c5&=&width=1024&height=320"
-        )
-
-        await ctx.respond(
-            embed=embed, view=Whitelist_View(interaction_user=ctx.user), ephemeral=True
-        )
+        await ctx.send("Laude Server TO Live Hone De :F", ephemeral=True)
 
 
 class View_Character_Info(discord.ui.View):
