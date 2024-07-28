@@ -31,7 +31,7 @@ SFTP_HOST = "gh-r9.glacierhosting.org"
 SFTP_USER = "fallen.1811ed1f"
 SFTP_PORT = 2022
 
-SFTP_PASSWORD = os.environ["SFTP_PASSWORD"]
+SFTP_PASSWORD = "&zS&fXywE@QBRr5"
 LOG_FILE_PATH = "/logs/latest.log"
 
 conn = sqlite3.connect("User.db")
@@ -730,5 +730,4 @@ class Whitelist_Buttons(discord.ui.View):
         console_channel = bot.get_channel(console_channel_id)
         await console_channel.send(f"fwhitelist add {self.user}")
 
-TOKEN = os.environ["TOKEN"]
-bot.run(TOKEN)
+bot.run("MTI2NDg0OTU0ODMzNDA3MTgyOA.GojSjB.uz_CDm0PgyiB-BvHGiaXOuGhtw4Ux4PuuHuv-c")
