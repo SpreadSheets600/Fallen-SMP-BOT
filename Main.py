@@ -729,5 +729,5 @@ class Whitelist_Buttons(discord.ui.View):
         console_channel = bot.get_channel(console_channel_id)
         await console_channel.send(f"fwhitelist add {self.user}")
 
-TOKEN = "MTI2NDg0OTU0ODMzNDA3MTgyOA.GeajgG.wH4Xg2aTX3AjIjF87D1MDDJsR7_sd-GhIYJJj8"
+TOKEN = "MTI2NDg0OTU0ODMzNDA3MTgyOA.GojSjB.uz_CDm0PgyiB-BvHGiaXOuGhtw4Ux4PuuHuv-c"
 bot.run(TOKEN)
