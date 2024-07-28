@@ -31,7 +31,7 @@ SFTP_HOST = "gh-r9.glacierhosting.org"
 SFTP_USER = "fallen.1811ed1f"
 SFTP_PORT = 2022
 
-SFTP_PASSWORD = "&zS&fXywE@QBRr5"
+SFTP_PASSWORD = os.environ["SFTP_PASSWORD"]
 LOG_FILE_PATH = "/logs/latest.log"
 
 conn = sqlite3.connect("User.db")
@@ -371,6 +371,7 @@ async def playerinfo(ctx: discord.ApplicationContext):
         "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
     )
     rows = cursor.fetchall()
+    row = rows[0]
 
     if rows:
         embed = discord.Embed(
@@ -729,5 +730,5 @@ class Whitelist_Buttons(discord.ui.View):
         console_channel = bot.get_channel(console_channel_id)
         await console_channel.send(f"fwhitelist add {self.user}")
 
-TOKEN = "MTI2NDg0OTU0ODMzNDA3MTgyOA.GojSjB.uz_CDm0PgyiB-BvHGiaXOuGhtw4Ux4PuuHuv-c"
+TOKEN = os.environ["TOKEN"]
 bot.run(TOKEN)
