@@ -360,7 +360,7 @@ async def reconnect(ctx):
         await connect_sftp()
 
     else:
-        await ctx.send("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
 @bot.slash_command(name="playerinfo", description="Get Your Player Info")
@@ -408,7 +408,7 @@ async def playerinfo(ctx: discord.ApplicationContext):
         conn.close()
 
     else:
-        await ctx.send("Laude Server To Live Hone De :F", ephemeral=True)
+        await ctx.respond("Laude Server To Live Hone De :F", ephemeral=True)
 
 
 @bot.slash_command(
@@ -449,7 +449,7 @@ async def del_whitelist(ctx: discord.ApplicationContext, member: discord.Member)
         await ctx.respond(embed=embed)
 
     else:
-        await ctx.send("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
 @bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
@@ -489,7 +489,7 @@ async def show_whitelist(ctx: discord.ApplicationContext):
         await ctx.respond(embed=embed)
 
     else:
-        await ctx.send("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
 @bot.slash_command(name="whitelist", description="Get WhiteListed On Fallen SMP")
@@ -531,7 +531,7 @@ async def whitelist(ctx):
         conn.close()
 
     else:
-        await ctx.send("Laude Server TO Live Hone De :F", ephemeral=True)
+        await ctx.respond("Laude Server TO Live Hone De :F", ephemeral=True)
 
 
 class View_Character_Info(discord.ui.View):
