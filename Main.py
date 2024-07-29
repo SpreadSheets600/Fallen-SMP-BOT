@@ -200,55 +200,107 @@ async def help(ctx: discord.ApplicationContext):
     if ctx.author.id in [1188730953217097811, 664157606587138048, 727012870683885578]:
         await ctx.followup.send(embed=admin_embed)
 
+
 @bot.slash_command(
     name="rules",
     description="Get Server Rules",
 )
 async def rules(ctx: discord.ApplicationContext):
-    
-        embed = discord.Embed(
-            title=":scroll: Server Rules",
-            description="List Of Rules To Follow On Fallen SMP",
-            color=0x2F3136,
-        )
-    
-        embed.add_field(
-            name="1. Refrain from Unnecessary PvP",
-            value="If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.",
-            inline=False,
-        )
-        embed.add_field(
-            name="2. Roleplay As Your Character",
-            value="Since this is a roleplay server, you must act as your character described in your character story. This enhances the immersive experience for everyone.",
-            inline=False,
-        )
-        embed.add_field(
-            name="3. Value Your Life In Game As Much As In Real Life",
-            value="Treat your in-game life with care and caution, just as you would in reality. This rule ensures a more realistic and engaging gameplay experience.",
-            inline=False,
-        )
-        embed.add_field(
-            name="4. No Chat Toxicity",
-            value="Toxic behaviour in chat is strictly prohibited. Maintain a respectful and positive environment for all players.",
-            inline=False,
-        )
-        embed.add_field(
-            name="5. No Stealing",
-            value="Stealing from other players is not allowed. Engaging in theft can lead to being labelled as an outlaw and facing consequences.",
-            inline=False,
-        )
-        embed.add_field(
-            name="6. Obey Orders from Duke, King, and Emperor",
-            value="You must follow the orders issued by the Duke, King, and Emperor. This maintains the hierarchical structure and order within the server.",
-            inline=False,
-        )
-        embed.add_field(
-            name="7. Building Permissions Required",
-            value="To build a house, you must obtain permission from the Duke. This ensures organized and planned development within the server.",
-            inline=False,
-        )
-    
-        await ctx.respond(embed=embed)
+
+    rules = """
+        ### 1. Refrain from Unnecessary PvP
+> If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.
+
+### 2. Roleplay as Your Character
+> Since this is a roleplay server, you must act as your character described in your character story. This enhances the immersive experience for everyone.
+
+### 3. Value Your Life In Game As Much As In Real Life 
+> Treat your in-game life with care and caution, just as you would in reality. This rule ensures a more realistic and engaging gameplay experience.
+
+### 4. No Chat Toxicity
+> Toxic behaviour in chat is strictly prohibited. Maintain a respectful and positive environment for all players.
+
+### 5. No Stealing
+> Stealing from other players is not allowed. Engaging in theft can lead to being labelled as an outlaw and facing consequences.
+
+### 6. Obey Orders from Duke, King, and Emperor
+> You must follow the orders issued by the Duke, King, and Emperor. This maintains the hierarchical structure and order within the server.
+
+### 7. Building Permissions Required
+> To build a house, you must obtain permission from the Duke. This ensures organized and planned development within the server.
+"""
+
+    embed = discord.Embed(
+        title=":scroll: Server Rules",
+        description=rules,
+        color=0x2F3136,
+    )
+
+    await ctx.respond(embed=embed)
+
+
+@bot.slash_command(
+    name="guide",
+    description="Get Server Guide",
+)
+async def guide(ctx: discord.ApplicationContext):
+
+    guide_1 = """
+## What Are The Roles in the Server?
+
+Since the server is in its early phase, it has only a few roles:
+
+1. **Citizen**
+   - **Description**: The basic role given to everyone. Citizens focus on building their houses and farming, with the goal of becoming a merchant.
+   - **Responsibilities**: Building homes, farming, and community participation.
+
+2. **Merchant**
+   - **Description**: The sole businesspeople of the server. You need at least two days of gameplay time to apply for this role.
+   - **Responsibilities**: Setting up shops and selling items.
+
+3. **Duke**
+   - **Description**: The direct subordinate to the King, holding significant power. Dukes assign the merchant role to citizens and address their issues.
+   - **Responsibilities**: Assigning merchant roles, resolving citizen issues, placing bounties, and issuing soft bans for rule violations.
+   - **Requirements**: At least one week of gameplay time to apply.
+
+4. **King**
+   - **Description**: The highest role in the server, overseeing matters of high importance and assigning the Duke role to merchants.
+   - **Responsibilities**: Managing high-level issues and maintaining order.
+   - **Selection**: Kings are elected at the beginning of every month.
+"""
+
+    guide_2 = """
+    ## How to Get Whitelisted ?
+
+To get whitelisted, follow these steps:
+
+1. **Use the Command**: Enter the command `/whitelist` <@1264849548334071828> in the chat.
+2. **Fill Out the Form**: This command will prompt a form that you need to complete. The form will ask for details such as your in-game name, your reason for joining, and any other relevant information.
+3. **Wait for Review**: Once you have submitted the form, it will be reviewed by the moderators.
+4. **Approval**: If your application is approved, the moderators will add you to the whitelist, allowing you to join the server.
+
+**Additional Information**:
+- **Be Patient**: The review process may take some time, so please be patient.
+- **Accuracy**: Ensure that all the information you provide in the form is accurate and truthful to increase your chances of being approved.
+- **Follow-Up**: If you haven't received a response after a reasonable amount of time, you may politely inquire about the status of your application with the moderators ( I know no one will follow this, so just ping <@727012870683885578> Or <@664157606587138048> ).
+"""
+
+    await ctx.defer()
+
+    embed = discord.Embed(
+        title=":book: Server Guide",
+        description=guide_1,
+        color=0x2F3136,
+    )
+
+    embed_2 = discord.Embed(
+        title=":book: Server Guide",
+        description=guide_2,
+        color=0x2F3136,
+    )
+
+    await ctx.respond(embed=embed)
+    await ctx.followup.send(embed=embed_2)
 
 @bot.slash_command(
     name="status",
@@ -798,7 +850,10 @@ class Whitelist(discord.ui.Modal):
         )
 
         whitelist_channel = bot.get_channel(whitelist_channel_id)
-        await whitelist_channel.send("<@727012870683885578> <@437622938242514945> <@664157606587138048> <@813064731782938624> <@1188730953217097811>",embed=log_embed)
+        await whitelist_channel.send(
+            "<@727012870683885578> <@437622938242514945> <@664157606587138048> <@813064731782938624> <@1188730953217097811>",
+            embed=log_embed,
+        )
 
 
 class Whitelist_Buttons(discord.ui.View):
