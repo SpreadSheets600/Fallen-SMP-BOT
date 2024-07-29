@@ -9,6 +9,7 @@ import warnings
 import paramiko
 import datetime
 from io import BytesIO
+from discord import option
 from discord.ext import commands
 from cryptography.utils import CryptographyDeprecationWarning
 
@@ -34,7 +35,13 @@ SFTP_PORT = 2022
 SFTP_PASSWORD = "&zS&fXywE@QBRr5"
 LOG_FILE_PATH = "/logs/latest.log"
 
-ADMINS = [727012870683885578, 437622938242514945, 243042987922292738, 664157606587138048, 1188730953217097811]
+ADMINS = [
+    727012870683885578,
+    437622938242514945,
+    243042987922292738,
+    664157606587138048,
+    1188730953217097811,
+]
 
 conn = sqlite3.connect("User.db")
 cursor = conn.cursor()
@@ -163,7 +170,6 @@ async def help(ctx: discord.ApplicationContext):
         inline=False,
     )
 
-    
     reconnect = bot.get_application_command("reconnect")
     del_whitelist = bot.get_application_command("del_whitelist")
     show_whitelist = bot.get_application_command("show_whitelist")
@@ -375,23 +381,21 @@ async def playerinfo(ctx: discord.ApplicationContext):
             "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
         )
         rows = cursor.fetchall()
-        row = rows[0]
 
         if rows:
+            row = rows[0]
             embed = discord.Embed(
-                title=":bust_in_silhouette: Player Information",
+                title="Player Information",
                 description=f"Details for **{ctx.author.display_name}** \n :id: Application ID : {row[0]}",
                 color=discord.Color.green(),
             )
 
-            row = rows[0]
-
             embed.add_field(
-                name=":bust_in_silhouette: Discord User ID",
+                name="Discord User ID",
                 value=f"{row[1]}({str(ctx.author.display_name)})",
                 inline=False,
             )
-            embed.add_field(name=":pick: Minecraft Username", value=row[2], inline=False)
+            embed.add_field(name="Minecraft Username", value=row[2], inline=False)
 
             embed.set_thumbnail(url=ctx.author.avatar.url)
             embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
@@ -400,7 +404,7 @@ async def playerinfo(ctx: discord.ApplicationContext):
         else:
             embed = discord.Embed(
                 title=":x: Player Data Not Found",
-                description="It Seems Like There Isn't Any Data For You. Make Sure To Sumbit The Whitelist Application.",
+                description="It Seems Like There Isn't Any Data For You. Make Sure To Submit The Whitelist Application.",
                 color=discord.Color.red(),
             )
             await ctx.respond(embed=embed, ephemeral=True)
@@ -450,6 +454,53 @@ async def del_whitelist(ctx: discord.ApplicationContext, member: discord.Member)
 
     else:
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+
+
+@bot.slash_command(name="add_whitelist", description="Add User To Whitelist")
+@option(
+    "type",
+    description="Choose The Whitelist Type",
+    choices=["java", "bedrock"],
+)
+async def add_whitelist(
+    ctx: discord.ApplicationContext, member: discord.Member, type: str
+):
+
+    if ctx.author.id in ADMINS:
+
+        conn = sqlite3.connect("User.db")
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM user_data")
+        rows = cursor.fetchall()
+        conn.close()
+
+        if rows:
+            for row in rows:
+                member = ctx.guild.get_member(int(row[1]))
+                if member:
+                    character_name = row[3]
+
+                    if type == "java":
+
+                        console_channel = bot.get_channel(console_channel_id)
+                        await console_channel.send(f"whitelist add {character_name}")
+
+                    elif type == "bedrock":
+
+                        console_channel = bot.get_channel(console_channel_id)
+                        await console_channel.send(f"fwhitelist add {character_name}")
+
+                    embed = discord.Embed(
+                        title="Whitelist Added",
+                        description=f"Whitelist For **{member.display_name}** Has Been Accepted.",
+                        color=discord.Color.green(),
+                    )
+
+                    await ctx.respond(embed=embed)
+
+        else:
+            await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
 @bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
@@ -525,7 +576,9 @@ async def whitelist(ctx):
             )
 
             await ctx.respond(
-                embed=embed, view=Whitelist_View(interaction_user=ctx.user), ephemeral=True
+                embed=embed,
+                view=Whitelist_View(interaction_user=ctx.user),
+                ephemeral=True,
             )
 
         conn.close()
@@ -536,7 +589,7 @@ async def whitelist(ctx):
 
 class View_Character_Info(discord.ui.View):
     def __init__(self, user_id) -> None:
-        super().__init__()
+        super().__init__(timeout=None)
         self.user_id = user_id
 
     @discord.ui.button(label="View Character Info", style=discord.ButtonStyle.secondary)
@@ -552,18 +605,14 @@ class View_Character_Info(discord.ui.View):
 
         if row:
             embed = discord.Embed(
-                title=":busts_in_silhouette: Character Information",
+                title="Character Information",
                 description=f"Character For **{interaction.user.display_name}**",
                 color=discord.Color.green(),
             )
 
-            embed.add_field(name=":scroll: Character Name", value=row[3], inline=True)
-            embed.add_field(
-                name=":interrobang: Character Gender", value=row[4], inline=True
-            )
-            embed.add_field(
-                name=":book: Character Backstory", value=row[5], inline=False
-            )
+            embed.add_field(name="Character Name", value=row[3], inline=True)
+            embed.add_field(name="Character Gender", value=row[4], inline=True)
+            embed.add_field(name="Character Backstory", value=row[5], inline=False)
 
             embed.set_thumbnail(url=interaction.user.avatar.url)
             embed.set_footer(text=f"Fallen SMP | Joined on {row[6]}")
@@ -582,7 +631,7 @@ class View_Character_Info(discord.ui.View):
 
 class View_Players(discord.ui.View):
     def __init__(self, data) -> None:
-        super().__init__()
+        super().__init__(timeout=None)
 
         self.data = data
 
@@ -610,7 +659,7 @@ class View_Players(discord.ui.View):
 
 class Whitelist_View(discord.ui.View):
     def __init__(self, interaction_user) -> None:
-        super().__init__()
+        super().__init__(timeout=None)
 
         self.interaction_user = interaction_user
 
@@ -692,10 +741,7 @@ class Whitelist(discord.ui.Modal):
             url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a3b94d&is=66a267cd&hm=b80fdae6a297eeb179347003f57935b5edf601dfbb5433937e9cbb4a9f1493c5&=&width=1024&height=320"
         )
 
-        await interaction.response.send_message(
-            embeds=[embed],
-            view=Whitelist_Buttons(self.children[0].value, interaction.user),
-        )
+        await interaction.response.send_message(embeds=[embed])
 
         log_embed = discord.Embed(
             title=f"Whitelist Application Of {interaction.user}",
@@ -703,12 +749,12 @@ class Whitelist(discord.ui.Modal):
         )
 
         whitelist_channel = bot.get_channel(whitelist_channel_id)
-        await whitelist_channel.send(embed=log_embed)
+        await whitelist_channel.send("<@727012870683885578> <@437622938242514945> <@664157606587138048> <@813064731782938624> <@1188730953217097811>",embed=log_embed)
 
 
 class Whitelist_Buttons(discord.ui.View):
     def __init__(self, user, interaction_user) -> None:
-        super().__init__()
+        super().__init__(timeout=None)
 
         self.user = user
         self.interaction_user = interaction_user
@@ -716,31 +762,18 @@ class Whitelist_Buttons(discord.ui.View):
     @discord.ui.button(label="Java Whitelist", style=discord.ButtonStyle.secondary)
     async def java_button_callback(self, button, interaction):
 
-        if interaction.user != self.interaction_user:
+        if interaction.user == self.interaction_user:
             await interaction.response.send_message(
-                "Laude Ye Tereliye Nehi Hai :F", ephemeral=True
+                "Please Wait For The Admin To Review Your Application", ephemeral=True
             )
-            return
-
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
-
-        console_channel = bot.get_channel(console_channel_id)
-        await console_channel.send(f"whitelist add {self.user}")
 
     @discord.ui.button(label="Bedrock Whitelist", style=discord.ButtonStyle.secondary)
     async def bedrock_button_callback(self, button, interaction):
 
-        if interaction.user != self.interaction_user:
+        if interaction.user == self.interaction_user:
             await interaction.response.send_message(
-                "Laude Ye Tereliye Nehi Hai :F", ephemeral=True
+                "Please Wait For The Admin To Review Your Application", ephemeral=True
             )
-            return
 
-        self.disable_all_items()
-        await interaction.response.edit_message(view=self)
-
-        console_channel = bot.get_channel(console_channel_id)
-        await console_channel.send(f"fwhitelist add {self.user}")
 
 bot.run("MTI2NDg0OTU0ODMzNDA3MTgyOA.GojSjB.uz_CDm0PgyiB-BvHGiaXOuGhtw4Ux4PuuHuv-c")
