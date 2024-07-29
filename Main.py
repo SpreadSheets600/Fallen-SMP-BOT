@@ -617,7 +617,7 @@ async def add_whitelist(
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM user_data WHERE discord_id = ?", (member.id,))
+        cursor.execute("SELECT * FROM user_data WHERE discord_user_id = ?", (member.id,))
         row = cursor.fetchone()
         conn.close()
 
