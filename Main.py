@@ -580,7 +580,7 @@ async def add_whitelist(
             for row in rows:
                 member = ctx.guild.get_member(int(row[1]))
                 if member:
-                    character_name = row[3]
+                    character_name = row[2]
 
                     if type == "java":
 
