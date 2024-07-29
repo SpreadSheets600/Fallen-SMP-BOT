@@ -22,11 +22,11 @@ logging.basicConfig(level=logging.INFO)
 intents = discord.Intents.all()
 bot = discord.Bot(intents=intents)
 
-DISCORD_CHANNEL_ID = 1220225200612708384
+DISCORD_CHANNEL_ID = 1267512160540426390
 
-whitelist_channel_id = 1266027538388484200
-console_channel_id = 1220225200612708383
-log_channel_id = 1220225200612708384
+whitelist_channel_id = 1267512076222595122
+console_channel_id = 1263898954999922720
+log_channel_id = 1267512160540426390
 
 SFTP_HOST = "pre-01.gbnodes.host"
 SFTP_USER = "bl_8262.1ab56acd"
@@ -135,6 +135,8 @@ async def help(ctx: discord.ApplicationContext):
     status = bot.get_application_command("status")
     ping = bot.get_application_command("ping")
     info = bot.get_application_command("info")
+    rules = bot.get_application_command("rules")
+    guide = bot.get_application_command("guide")
     whitelist = bot.get_application_command("whitelist")
     playerinfo = bot.get_application_command("playerinfo")
 
@@ -157,6 +159,16 @@ async def help(ctx: discord.ApplicationContext):
     embed.add_field(
         name=f"{info.mention}",
         value="Get Bot Information",
+        inline=False,
+    )
+    embed.add_field(
+        name=f"{rules.mention}",
+        value="Get Server Rules",
+        inline=False,
+    )
+    embed.add_field(
+        name=f"{guide.mention}",
+        value="Get Server Guide",
         inline=False,
     )
     embed.add_field(
@@ -242,7 +254,9 @@ async def rules(ctx: discord.ApplicationContext):
         color=0x2F3136,
     )
 
-    await ctx.respond(embed=embed)
+    embed.set_image(url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a8ff4d&is=66a7adcd&hm=f11beaedcee762a32204c87a07d89c4faa2c2d64611ae0c62eea9d4ccf23e3d6&=&width=1024&height=320")
+
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 @bot.slash_command(
@@ -251,7 +265,34 @@ async def rules(ctx: discord.ApplicationContext):
 )
 async def guide(ctx: discord.ApplicationContext):
 
-    guide_1 = """
+    embed = discord.Embed(
+        title=":book: Server Guide",
+        description="Choose A Guide Topic",
+        color=0x2F3136,
+    )
+
+    await ctx.respond(embed=embed, view=Guide_Menu())
+
+class Guide_Menu(discord.ui.View):
+    @discord.ui.select( 
+        placeholder = "Guide Menu", 
+        min_values = 1, 
+        max_values = 1, 
+        options = [ 
+            discord.SelectOption(
+                label="Basic Roles Info",
+                description="Learn About Server Roles"
+            ),
+            discord.SelectOption(
+                label="How To Get Whitelisted",
+                description="Learn about Whitelisting Process"
+            )
+        ]
+    )
+    async def select_callback(self, select, interaction):
+
+        if select.values[0] == "Basic Roles Info":
+                guide_1 = """
 ## What Are The Roles in the Server?
 
 Since the server is in its early phase, it has only a few roles:
@@ -275,7 +316,16 @@ Since the server is in its early phase, it has only a few roles:
    - **Selection**: Kings are elected at the beginning of every month.
 """
 
-    guide_2 = """
+                embed = discord.Embed(
+                    title=":book: Server Guide",
+                    description=guide_1,
+                    color=0x2F3136,
+                )
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif select.values[0] == "How To Get Whitelisted":
+                guide_2 = """
     ## How to Get Whitelisted ?
 
 To get whitelisted, follow these steps:
@@ -291,22 +341,15 @@ To get whitelisted, follow these steps:
 - **Follow-Up**: If you haven't received a response after a reasonable amount of time, you may politely inquire about the status of your application with the moderators ( I know no one will follow this, so just ping <@727012870683885578> Or <@664157606587138048> ).
 """
 
-    await ctx.defer()
+                embed = discord.Embed(
+                    title=":book: Server Guide",
+                    description=guide_2,
+                    color=0x2F3136,
+                )
 
-    embed = discord.Embed(
-        title=":book: Server Guide",
-        description=guide_1,
-        color=0x2F3136,
-    )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    embed_2 = discord.Embed(
-        title=":book: Server Guide",
-        description=guide_2,
-        color=0x2F3136,
-    )
 
-    await ctx.respond(embed=embed)
-    await ctx.followup.send(embed=embed_2)
 
 @bot.slash_command(
     name="status",
