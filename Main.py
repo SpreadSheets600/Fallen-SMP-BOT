@@ -254,7 +254,9 @@ async def rules(ctx: discord.ApplicationContext):
         color=0x2F3136,
     )
 
-    embed.set_image(url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a8ff4d&is=66a7adcd&hm=f11beaedcee762a32204c87a07d89c4faa2c2d64611ae0c62eea9d4ccf23e3d6&=&width=1024&height=320")
+    embed.set_image(
+        url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a8ff4d&is=66a7adcd&hm=f11beaedcee762a32204c87a07d89c4faa2c2d64611ae0c62eea9d4ccf23e3d6&=&width=1024&height=320"
+    )
 
     await ctx.respond(embed=embed, ephemeral=True)
 
@@ -273,26 +275,26 @@ async def guide(ctx: discord.ApplicationContext):
 
     await ctx.respond(embed=embed, view=Guide_Menu())
 
+
 class Guide_Menu(discord.ui.View):
-    @discord.ui.select( 
-        placeholder = "Guide Menu", 
-        min_values = 1, 
-        max_values = 1, 
-        options = [ 
+    @discord.ui.select(
+        placeholder="Guide Menu",
+        min_values=1,
+        max_values=1,
+        options=[
             discord.SelectOption(
-                label="Basic Roles Info",
-                description="Learn About Server Roles"
+                label="Basic Roles Info", description="Learn About Server Roles"
             ),
             discord.SelectOption(
                 label="How To Get Whitelisted",
-                description="Learn about Whitelisting Process"
-            )
-        ]
+                description="Learn about Whitelisting Process",
+            ),
+        ],
     )
     async def select_callback(self, select, interaction):
 
         if select.values[0] == "Basic Roles Info":
-                guide_1 = """
+            guide_1 = """
 ## What Are The Roles in the Server?
 
 Since the server is in its early phase, it has only a few roles:
@@ -316,16 +318,16 @@ Since the server is in its early phase, it has only a few roles:
    - **Selection**: Kings are elected at the beginning of every month.
 """
 
-                embed = discord.Embed(
-                    title=":book: Server Guide",
-                    description=guide_1,
-                    color=0x2F3136,
-                )
+            embed = discord.Embed(
+                title=":book: Server Guide",
+                description=guide_1,
+                color=0x2F3136,
+            )
 
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
         elif select.values[0] == "How To Get Whitelisted":
-                guide_2 = """
+            guide_2 = """
     ## How to Get Whitelisted ?
 
 To get whitelisted, follow these steps:
@@ -341,14 +343,13 @@ To get whitelisted, follow these steps:
 - **Follow-Up**: If you haven't received a response after a reasonable amount of time, you may politely inquire about the status of your application with the moderators ( I know no one will follow this, so just ping <@727012870683885578> Or <@664157606587138048> ).
 """
 
-                embed = discord.Embed(
-                    title=":book: Server Guide",
-                    description=guide_2,
-                    color=0x2F3136,
-                )
+            embed = discord.Embed(
+                title=":book: Server Guide",
+                description=guide_2,
+                color=0x2F3136,
+            )
 
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @bot.slash_command(
@@ -559,6 +560,7 @@ async def playerinfo(ctx: discord.ApplicationContext):
 
     conn.close()
 
+
 @bot.slash_command(
     name="del_whitelist", description="Delete User's Whitelist Application"
 )
@@ -615,36 +617,40 @@ async def add_whitelist(
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM user_data")
-        rows = cursor.fetchall()
+        cursor.execute("SELECT * FROM user_data WHERE discord_id = ?", (member.id,))
+        row = cursor.fetchone()
         conn.close()
 
-        if rows:
-            for row in rows:
-                member = ctx.guild.get_member(int(row[1]))
-                if member:
-                    character_name = row[2]
+        if row:
+            character_name = row[2]
 
-                    if type == "java":
+            if type == "java":
+                console_channel = bot.get_channel(console_channel_id)
+                await console_channel.send(f"whitelist add {character_name}")
 
-                        console_channel = bot.get_channel(console_channel_id)
-                        await console_channel.send(f"whitelist add {character_name}")
+            elif type == "bedrock":
+                console_channel = bot.get_channel(console_channel_id)
+                await console_channel.send(f"fwhitelist add {character_name}")
 
-                    elif type == "bedrock":
+            embed = discord.Embed(
+                title="Whitelist Added",
+                description=f"Whitelist for **{member.display_name}** has been accepted.",
+                color=discord.Color.green(),
+            )
 
-                        console_channel = bot.get_channel(console_channel_id)
-                        await console_channel.send(f"fwhitelist add {character_name}")
-
-                    embed = discord.Embed(
-                        title="Whitelist Added",
-                        description=f"Whitelist For **{member.display_name}** Has Been Accepted.",
-                        color=discord.Color.green(),
-                    )
-
-                    await ctx.respond(embed=embed)
+            await ctx.respond(embed=embed)
 
         else:
-            await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+            embed = discord.Embed(
+                title="User Not Found",
+                description=f"No Whitelist Application Found For **{member.display_name}**.",
+                color=discord.Color.red(),
+            )
+
+            await ctx.respond(embed=embed)
+
+    else:
+        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
 @bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
