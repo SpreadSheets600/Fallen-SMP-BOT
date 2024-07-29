@@ -200,6 +200,55 @@ async def help(ctx: discord.ApplicationContext):
     if ctx.author.id in [1188730953217097811, 664157606587138048, 727012870683885578]:
         await ctx.followup.send(embed=admin_embed)
 
+@bot.slash_command(
+    name="rules",
+    description="Get Server Rules",
+)
+async def rules(ctx: discord.ApplicationContext):
+    
+        embed = discord.Embed(
+            title=":scroll: Server Rules",
+            description="List Of Rules To Follow On Fallen SMP",
+            color=0x2F3136,
+        )
+    
+        embed.add_field(
+            name="1. Refrain from Unnecessary PvP",
+            value="If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.",
+            inline=False,
+        )
+        embed.add_field(
+            name="2. Roleplay As Your Character",
+            value="Since this is a roleplay server, you must act as your character described in your character story. This enhances the immersive experience for everyone.",
+            inline=False,
+        )
+        embed.add_field(
+            name="3. Value Your Life In Game As Much As In Real Life",
+            value="Treat your in-game life with care and caution, just as you would in reality. This rule ensures a more realistic and engaging gameplay experience.",
+            inline=False,
+        )
+        embed.add_field(
+            name="4. No Chat Toxicity",
+            value="Toxic behaviour in chat is strictly prohibited. Maintain a respectful and positive environment for all players.",
+            inline=False,
+        )
+        embed.add_field(
+            name="5. No Stealing",
+            value="Stealing from other players is not allowed. Engaging in theft can lead to being labelled as an outlaw and facing consequences.",
+            inline=False,
+        )
+        embed.add_field(
+            name="6. Obey Orders from Duke, King, and Emperor",
+            value="You must follow the orders issued by the Duke, King, and Emperor. This maintains the hierarchical structure and order within the server.",
+            inline=False,
+        )
+        embed.add_field(
+            name="7. Building Permissions Required",
+            value="To build a house, you must obtain permission from the Duke. This ensures organized and planned development within the server.",
+            inline=False,
+        )
+    
+        await ctx.respond(embed=embed)
 
 @bot.slash_command(
     name="status",
