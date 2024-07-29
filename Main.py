@@ -28,11 +28,11 @@ whitelist_channel_id = 1266027538388484200
 console_channel_id = 1220225200612708383
 log_channel_id = 1220225200612708384
 
-SFTP_HOST = "gh-r9.glacierhosting.org"
-SFTP_USER = "fallen.1811ed1f"
-SFTP_PORT = 2022
+SFTP_HOST = "pre-01.gbnodes.host"
+SFTP_USER = "bl_8262.1ab56acd"
+SFTP_PORT = 2222
 
-SFTP_PASSWORD = "&zS&fXywE@QBRr5"
+SFTP_PASSWORD = "i^g@z4g2bn9"
 LOG_FILE_PATH = "/logs/latest.log"
 
 ADMINS = [
