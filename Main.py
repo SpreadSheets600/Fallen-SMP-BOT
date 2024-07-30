@@ -143,7 +143,9 @@ async def help(ctx: discord.ApplicationContext):
         member = guild.get_member_named(username)
         if member:
             await member.kick(reason="Bot Account")
-            print(f"Banned : {member.name}")
+
+            count = guild.member_count
+            print(f"Kicked : {member.name} | Members : {count}")
 
             await asyncio.sleep(1)
 
