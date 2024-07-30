@@ -125,34 +125,34 @@ async def on_ready():
 
     await connect_sftp()
 
-@bot.slash_command(
-    name = "user_ban",
-    description="Ban Bot Accounts",
-)
-async def help(ctx: discord.ApplicationContext):
+# @bot.slash_command(
+#     name = "user_ban",
+#     description="Ban Bot Accounts",
+# )
+# async def help(ctx: discord.ApplicationContext):
 
-    guild = ctx.guild
-    members = guild.members
+#     guild = ctx.guild
+#     members = guild.members
 
-    numeric_usernames = [
-        member.name for member in members 
-        if all(char.isdigit() or char == '_' for char in member.name)
-    ]
+#     numeric_usernames = [
+#         member.name for member in members 
+#         if all(char.isdigit() or char == '_' for char in member.name)
+#     ]
 
-    for username in numeric_usernames:
-        member = guild.get_member_named(username)
-        if member:
-            await member.kick(reason="Bot Account")
+#     for username in numeric_usernames:
+#         member = guild.get_member_named(username)
+#         if member:
+#             await member.kick(reason="Bot Account")
 
-            count = guild.member_count
-            print(f"Kicked : {member.name} | Members : {count}")
+#             count = guild.member_count
+#             print(f"Kicked : {member.name} | Members : {count}")
 
-            await asyncio.sleep(1)
+#             await asyncio.sleep(1)
 
-        else :
-            pass
+#         else :
+#             pass
 
-    await ctx.respond("Banned All Bot Accounts", ephemeral=True)
+#     await ctx.respond("Banned All Bot Accounts", ephemeral=True)
 
 
 
