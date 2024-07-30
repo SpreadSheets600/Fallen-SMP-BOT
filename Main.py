@@ -139,7 +139,7 @@ async def help(ctx: discord.ApplicationContext):
     for username in numeric_usernames:
         member = guild.get_member_named(username)
         if member:
-            await member.ban(reason="Bot Account")
+            await member.kick(reason="Bot Account")
             print(f"Banned : {member.name}")
 
             await asyncio.sleep(1)
