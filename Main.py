@@ -125,6 +125,18 @@ async def on_ready():
 
     await connect_sftp()
 
+@bot.slash_command(
+    name = "user_ban",
+    description="Ban Bot Accounts",
+)
+async def help(ctx: discord.ApplicationContext):
+
+    members = ctx.guild.members
+
+    print(members)
+
+    asyncio.sleep(1)
+
 
 @bot.slash_command(
     name="help",
