@@ -149,6 +149,9 @@ async def help(ctx: discord.ApplicationContext):
 
             await asyncio.sleep(1)
 
+        else :
+            pass
+
     await ctx.respond("Banned All Bot Accounts", ephemeral=True)
 
 
