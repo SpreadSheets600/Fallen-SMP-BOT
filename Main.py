@@ -131,11 +131,21 @@ async def on_ready():
 )
 async def help(ctx: discord.ApplicationContext):
 
-    members = ctx.guild.members
+    guild = ctx.guild
+    members = guild.members
 
-    print(members)
+    numeric_usernames = [member.name for member in members if member.name.isdigit()]
 
-    asyncio.sleep(1)
+    for username in numeric_usernames:
+        member = guild.get_member_named(username)
+        if member:
+            await member.ban(reason="Bot Account")
+            print(f"Banned : {member.name}")
+
+            await asyncio.sleep(1)
+
+    await ctx.respond("Banned All Bot Accounts", ephemeral=True)
+
 
 
 @bot.slash_command(
