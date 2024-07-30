@@ -134,7 +134,10 @@ async def help(ctx: discord.ApplicationContext):
     guild = ctx.guild
     members = guild.members
 
-    numeric_usernames = [member.name for member in members if member.name.isdigit()]
+    numeric_usernames = [
+        member.name for member in members 
+        if all(char.isdigit() or char == '_' for char in member.name)
+    ]
 
     for username in numeric_usernames:
         member = guild.get_member_named(username)
