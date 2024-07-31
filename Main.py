@@ -20,7 +20,7 @@ warnings.filterwarnings(
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
-bot = discord.Bot(intents=intents)
+bot = discord.AutoShardedBot(intents=intents, heartbeat_timeout=120, shard_count=2)
 
 DISCORD_CHANNEL_ID = 1267512160540426390
 
@@ -126,7 +126,7 @@ async def on_ready():
     await connect_sftp()
 
 
-role_ids = []
+role_ids = [1267889415556956262, 1267888845974933575, 1267886850127953951, 1267886488012722358]
 
 @bot.slash_command(
     name="add_roles",
