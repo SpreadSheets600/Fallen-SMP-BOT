@@ -41,6 +41,7 @@ ADMINS = [
     243042987922292738,
     664157606587138048,
     1188730953217097811,
+    896411007797325824,
 ]
 
 conn = sqlite3.connect("User.db")
@@ -124,6 +125,37 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name="With Utilities"))
 
     await connect_sftp()
+
+
+role_ids = []
+
+@bot.slash_command(
+    name="add_roles",
+    description="Add Roles To All Members",
+)
+@commands.has_permissions(administrator=True)
+async def add_roles(ctx):
+    guild = ctx.guild
+    roles = [guild.get_role(role_id) for role_id in role_ids]
+
+    if None in roles:
+        await ctx.respond("Roles Not Found")
+        return
+
+    for member in guild.members:
+        for role in roles:
+            if role not in member.roles:
+                try:
+                    await member.add_roles(role)
+                    await asyncio.sleep(1)
+
+                except discord.Forbidden:
+                    await ctx.respond(f"Permission Error While Adding Roles To {member.name}")
+                except discord.HTTPException as e:
+                    await ctx.respond(f"HTTP Error While Adding Roles To {member.name} : {e}")
+    
+    await ctx.respond("Done :)")
+
 
 # @bot.slash_command(
 #     name = "user_ban",
