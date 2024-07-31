@@ -146,6 +146,9 @@ async def add_roles(ctx):
             if role not in member.roles:
                 try:
                     await member.add_roles(role)
+
+                    print(f"Added Roles To {member.name}")
+
                     await asyncio.sleep(1)
 
                 except discord.Forbidden:
