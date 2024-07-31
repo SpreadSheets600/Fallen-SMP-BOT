@@ -911,7 +911,7 @@ class Whitelist(discord.ui.Modal):
             discord.ui.InputText(
                 label="Character Backstory",
                 placeholder="Write Your Character BackStory",
-                style=discord.InputTextStyle.long,
+                style=discord.InputTextStyle.multiline,
             )
         )
 
