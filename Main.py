@@ -156,7 +156,7 @@ async def on_ready():
 #                     await ctx.respond(f"Permission Error While Adding Roles To {member.name}")
 #                 except discord.HTTPException as e:
 #                     await ctx.respond(f"HTTP Error While Adding Roles To {member.name} : {e}")
-    
+
 #     await ctx.respond("Done :)")
 
 
@@ -170,7 +170,7 @@ async def on_ready():
 #     members = guild.members
 
 #     numeric_usernames = [
-#         member.name for member in members 
+#         member.name for member in members
 #         if all(char.isdigit() or char == '_' for char in member.name)
 #     ]
 
@@ -188,7 +188,6 @@ async def on_ready():
 #             pass
 
 #     await ctx.respond("Banned All Bot Accounts", ephemeral=True)
-
 
 
 @bot.slash_command(
@@ -586,7 +585,10 @@ async def reconnect(ctx):
 
 
 @bot.slash_command(name="playerinfo", description="Get Your Player Info")
-async def playerinfo(ctx: discord.ApplicationContext):
+async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = None):
+
+    if member == None:
+        member = ctx.author
 
     conn = sqlite3.connect("User.db")
     cursor = conn.cursor()
@@ -682,7 +684,9 @@ async def add_whitelist(
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM user_data WHERE discord_user_id = ?", (member.id,))
+        cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?", (member.id,)
+        )
         row = cursor.fetchone()
         conn.close()
 
@@ -724,19 +728,32 @@ class WhitelistView(discord.ui.View):
         self.embeds = embeds
         self.current_page = 0
 
-    @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary)
-    async def previous_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.primary)
+    async def previous_page(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         if self.current_page > 0:
             self.current_page -= 1
-            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+            await interaction.response.edit_message(
+                embed=self.embeds[self.current_page], view=self
+            )
+        else:
+            await interaction.response.send_message("No Previus Page", ephemeral=True)
 
-    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
-    async def next_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.primary)
+    async def next_page(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         if self.current_page < len(self.embeds) - 1:
             self.current_page += 1
-            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+            await interaction.response.edit_message(
+                embed=self.embeds[self.current_page], view=self
+            )
+        else:
+            await interaction.response.send_message("No Next Page", ephemeral=True)
 
-@bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
+
+@bot.slash_command(name="show_whitelist", description="Show All Whitelisted Members")
 async def show_whitelist(ctx: discord.ApplicationContext):
     if ctx.author.id in ADMINS:
         conn = sqlite3.connect("User.db")
@@ -758,7 +775,7 @@ async def show_whitelist(ctx: discord.ApplicationContext):
                 if i > 0 and i % 10 == 0:
                     embeds.append(embed)
                     embed = discord.Embed(
-                        title="Whitelisted Members (continued)",
+                        title="Whitelisted Members (Continued)",
                         color=discord.Color.blue(),
                     )
 
@@ -944,10 +961,12 @@ class Whitelist(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
 
-        if len(self.children[3].value) > 3000 :
-            await interaction.response.send_message("Character Backstory Below 3000 Characters Is Appretiated", ephemeral=True)
+        if len(self.children[3].value) > 3000:
+            await interaction.response.send_message(
+                "Character Backstory Below 3000 Characters Is Appretiated",
+                ephemeral=True,
+            )
             return
-
 
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
