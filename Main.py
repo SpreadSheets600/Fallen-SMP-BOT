@@ -718,11 +718,27 @@ async def add_whitelist(
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
+class WhitelistView(discord.ui.View):
+    def __init__(self, embeds):
+        super().__init__()
+        self.embeds = embeds
+        self.current_page = 0
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary)
+    async def previous_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if self.current_page > 0:
+            self.current_page -= 1
+            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
+    async def next_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if self.current_page < len(self.embeds) - 1:
+            self.current_page += 1
+            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+
 @bot.slash_command(name="show_whitelist", description="Show all whitelisted members")
 async def show_whitelist(ctx: discord.ApplicationContext):
-
     if ctx.author.id in ADMINS:
-
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
@@ -731,13 +747,21 @@ async def show_whitelist(ctx: discord.ApplicationContext):
         conn.close()
 
         if rows:
+            embeds = []
             embed = discord.Embed(
                 title="Whitelisted Members",
                 description="List Of Whitelisted Members",
                 color=discord.Color.blue(),
             )
 
-            for row in rows:
+            for i, row in enumerate(rows):
+                if i > 0 and i % 10 == 0:
+                    embeds.append(embed)
+                    embed = discord.Embed(
+                        title="Whitelisted Members (continued)",
+                        color=discord.Color.blue(),
+                    )
+
                 member = ctx.guild.get_member(int(row[1]))
                 if member:
                     embed.add_field(
@@ -745,15 +769,18 @@ async def show_whitelist(ctx: discord.ApplicationContext):
                         value=f"Minecraft Username: {row[2]}",
                         inline=False,
                     )
+
+            embeds.append(embed)
         else:
             embed = discord.Embed(
                 title="No Whitelisted Members",
                 description="There Are No Whitelisted Members.",
                 color=discord.Color.red(),
             )
+            embeds = [embed]
 
-        await ctx.respond(embed=embed)
-
+        view = WhitelistView(embeds)
+        await ctx.respond(embed=embeds[0], view=view)
     else:
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
@@ -916,6 +943,12 @@ class Whitelist(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
+
+        if len(self.children[3].value) > 3000 :
+            await interaction.response.send_message("Character Backstory Below 3000 Characters Is Appretiated", ephemeral=True)
+            return
+
+
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
