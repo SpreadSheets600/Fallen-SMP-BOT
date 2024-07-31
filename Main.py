@@ -127,37 +127,37 @@ async def on_ready():
     await connect_sftp()
 
 
-role_ids = [1267889415556956262, 1267888845974933575, 1267886850127953951, 1267886488012722358]
+# role_ids = [1267889415556956262, 1267888845974933575, 1267886850127953951, 1267886488012722358]
 
-@bot.slash_command(
-    name="add_roles",
-    description="Add Roles To All Members",
-)
-@commands.has_permissions(administrator=True)
-async def add_roles(ctx):
-    guild = ctx.guild
-    roles = [guild.get_role(role_id) for role_id in role_ids]
+# @bot.slash_command(
+#     name="add_roles",
+#     description="Add Roles To All Members",
+# )
+# @commands.has_permissions(administrator=True)
+# async def add_roles(ctx):
+#     guild = ctx.guild
+#     roles = [guild.get_role(role_id) for role_id in role_ids]
 
-    if None in roles:
-        await ctx.respond("Roles Not Found")
-        return
+#     if None in roles:
+#         await ctx.respond("Roles Not Found")
+#         return
 
-    for member in guild.members:
-        for role in roles:
-            if role not in member.roles:
-                try:
-                    await member.add_roles(role)
+#     for member in guild.members:
+#         for role in roles:
+#             if role not in member.roles:
+#                 try:
+#                     await member.add_roles(role)
 
-                    print(f"Added Roles To {member.name}")
+#                     print(f"Added Roles To {member.name}")
 
-                    await asyncio.sleep(1)
+#                     await asyncio.sleep(1)
 
-                except discord.Forbidden:
-                    await ctx.respond(f"Permission Error While Adding Roles To {member.name}")
-                except discord.HTTPException as e:
-                    await ctx.respond(f"HTTP Error While Adding Roles To {member.name} : {e}")
+#                 except discord.Forbidden:
+#                     await ctx.respond(f"Permission Error While Adding Roles To {member.name}")
+#                 except discord.HTTPException as e:
+#                     await ctx.respond(f"HTTP Error While Adding Roles To {member.name} : {e}")
     
-    await ctx.respond("Done :)")
+#     await ctx.respond("Done :)")
 
 
 # @bot.slash_command(
