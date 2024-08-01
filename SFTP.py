@@ -63,25 +63,28 @@ async def read_and_send_logs():
 async def connect_sftp():
     global sftp_client, transport
 
-    try:
-        transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
-        transport.connect(username=SFTP_USER, password=SFTP_PASSWORD)
-        sftp_client = paramiko.SFTPClient.from_transport(transport)
-        logging.info("Connected To SFTP - Loaded LOG File")
-        await read_and_send_logs()
-    except paramiko.AuthenticationException as e:
-        logging.error(f"Authentication Failed : {e}")
-    except paramiko.SSHException as e:
-        logging.error(f"SSH Error : {e}")
-    except FileNotFoundError as e:
-        logging.error(f"File Not Found : {e}")
-    except Exception as e:
-        logging.error(f"Failed To Send Logs : {e}")
-    finally:
-        if sftp_client:
-            sftp_client.close()
-        if transport:
-            transport.close()
+    while True:
+        try:
+            transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
+            transport.connect(username=SFTP_USER, password=SFTP_PASSWORD)
+            sftp_client = paramiko.SFTPClient.from_transport(transport)
+            logging.info("Connected To SFTP - Loaded LOG File")
+            await read_and_send_logs()
+        except (
+            paramiko.AuthenticationException,
+            paramiko.SSHException,
+            FileNotFoundError,
+        ) as e:
+            logging.error(f"Connection error: {e}. Reconnecting in 5 seconds...")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}. Reconnecting in 5 seconds...")
+        finally:
+            if sftp_client:
+                sftp_client.close()
+            if transport:
+                transport.close()
+
+        await asyncio.sleep(5)
 
 
 @bot.event
@@ -95,7 +98,7 @@ async def on_ready():
     print("-----------------------------")
     await bot.change_presence(activity=discord.Game(name="With Utilities"))
 
-    await connect_sftp()
+    bot.loop.create_task(connect_sftp())
 
 
 @bot.slash_command(
@@ -171,9 +174,10 @@ async def reconnect(ctx):
         )
 
         await ctx.followup.send(embed=embed)
-        await connect_sftp()
+        bot.loop.create_task(connect_sftp())
 
     else:
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
+
 
 bot.run("MTI2ODU4MTQ4NTg3MTUwMTM1NA.GNWFSy.8h9dd3OnwQWfyqmAeXk37OyyVgt1EXWuDz2T40")
