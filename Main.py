@@ -1,23 +1,12 @@
 import os
 import base64
 import sqlite3
-import asyncio
-import logging
 import discord
 import aiohttp
-import warnings
-import paramiko
 import datetime
 from io import BytesIO
 from discord import option
 from discord.ext import commands
-from cryptography.utils import CryptographyDeprecationWarning
-
-warnings.filterwarnings(
-    "ignore", category=CryptographyDeprecationWarning, module="paramiko"
-)
-
-logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
 bot = discord.AutoShardedBot(intents=intents)
