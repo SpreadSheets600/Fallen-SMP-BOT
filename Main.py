@@ -20,20 +20,13 @@ warnings.filterwarnings(
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
-bot = discord.AutoShardedBot(intents=intents, heartbeat_timeout=120, shard_count=2)
+bot = discord.AutoShardedBot(intents=intents)
 
 DISCORD_CHANNEL_ID = 1267512160540426390
 
 whitelist_channel_id = 1267512076222595122
 console_channel_id = 1263898954999922720
 log_channel_id = 1267512160540426390
-
-SFTP_HOST = "pre-01.gbnodes.host"
-SFTP_USER = "bl_8262.1ab56acd"
-SFTP_PORT = 2222
-
-SFTP_PASSWORD = "i^g@z4g2bn9"
-LOG_FILE_PATH = "/logs/latest.log"
 
 ADMINS = [
     727012870683885578,
@@ -61,56 +54,7 @@ CREATE TABLE IF NOT EXISTS user_data (
 """
 )
 
-API_URL = "https://api.mcsrvstat.us/3/gh-r9.glacierhosting.org:35564"
-
-
-async def send_to_discord(message):
-    channel = bot.get_channel(DISCORD_CHANNEL_ID)
-    if channel:
-        await channel.send(message)
-    else:
-        logging.error(f"Channel ID : {DISCORD_CHANNEL_ID} ")
-
-
-async def follow_sftp(sftp, logfile_path):
-    with sftp.open(logfile_path, "r") as logfile:
-        logfile.seek(0, 2)
-        while True:
-            line = logfile.readline()
-            if not line:
-                await asyncio.sleep(0.1)
-                continue
-            yield line.strip()
-
-
-async def read_and_send_logs():
-    global sftp_client
-    async for line in follow_sftp(sftp_client, LOG_FILE_PATH):
-        await send_to_discord(line)
-
-
-async def connect_sftp():
-    global sftp_client, transport
-
-    try:
-        transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
-        transport.connect(username=SFTP_USER, password=SFTP_PASSWORD)
-        sftp_client = paramiko.SFTPClient.from_transport(transport)
-        logging.info("Connected To SFTP - Loaded LOG File")
-        await read_and_send_logs()
-    except paramiko.AuthenticationException as e:
-        logging.error(f"Authentication Failed : {e}")
-    except paramiko.SSHException as e:
-        logging.error(f"SSH Error : {e}")
-    except FileNotFoundError as e:
-        logging.error(f"File Not Found : {e}")
-    except Exception as e:
-        logging.error(f"Failed To Send Logs : {e}")
-    finally:
-        if sftp_client:
-            sftp_client.close()
-        if transport:
-            transport.close()
+API_URL = "https://api.mcsrvstat.us/3/pre-01.gbnodes.host:25610"
 
 
 @bot.event
@@ -120,74 +64,9 @@ async def on_ready():
     bot.start_time = start_time
 
     print("-----------------------------")
-    print("--- + SOHAM's Utilities + ---")
+    print("--- + Fallener Utilities + ---")
     print("-----------------------------")
     await bot.change_presence(activity=discord.Game(name="With Utilities"))
-
-    await connect_sftp()
-
-
-# role_ids = [1267889415556956262, 1267888845974933575, 1267886850127953951, 1267886488012722358]
-
-# @bot.slash_command(
-#     name="add_roles",
-#     description="Add Roles To All Members",
-# )
-# @commands.has_permissions(administrator=True)
-# async def add_roles(ctx):
-#     guild = ctx.guild
-#     roles = [guild.get_role(role_id) for role_id in role_ids]
-
-#     if None in roles:
-#         await ctx.respond("Roles Not Found")
-#         return
-
-#     for member in guild.members:
-#         for role in roles:
-#             if role not in member.roles:
-#                 try:
-#                     await member.add_roles(role)
-
-#                     print(f"Added Roles To {member.name}")
-
-#                     await asyncio.sleep(1)
-
-#                 except discord.Forbidden:
-#                     await ctx.respond(f"Permission Error While Adding Roles To {member.name}")
-#                 except discord.HTTPException as e:
-#                     await ctx.respond(f"HTTP Error While Adding Roles To {member.name} : {e}")
-
-#     await ctx.respond("Done :)")
-
-
-# @bot.slash_command(
-#     name = "user_ban",
-#     description="Ban Bot Accounts",
-# )
-# async def help(ctx: discord.ApplicationContext):
-
-#     guild = ctx.guild
-#     members = guild.members
-
-#     numeric_usernames = [
-#         member.name for member in members
-#         if all(char.isdigit() or char == '_' for char in member.name)
-#     ]
-
-#     for username in numeric_usernames:
-#         member = guild.get_member_named(username)
-#         if member:
-#             await member.kick(reason="Bot Account")
-
-#             count = guild.member_count
-#             print(f"Kicked : {member.name} | Members : {count}")
-
-#             await asyncio.sleep(1)
-
-#         else :
-#             pass
-
-#     await ctx.respond("Banned All Bot Accounts", ephemeral=True)
 
 
 @bot.slash_command(
@@ -558,32 +437,6 @@ async def info(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed)
 
 
-@bot.slash_command(name="reconnect", description="Reconnects To The Server SFTP")
-async def reconnect(ctx):
-
-    if ctx.author.id in ADMINS:
-
-        await ctx.defer()
-        global sftp_client, transport
-
-        if sftp_client:
-            sftp_client.close()
-        if transport:
-            transport.close()
-
-        embed = discord.Embed(
-            title="Server SFTP",
-            description="SFTP Have Been Reconnected",
-            color=discord.Color.green(),
-        )
-
-        await ctx.followup.send(embed=embed)
-        await connect_sftp()
-
-    else:
-        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
-
-
 @bot.slash_command(name="playerinfo", description="Get Your Player Info")
 async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = None):
 
@@ -602,7 +455,7 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
         row = rows[0]
         embed = discord.Embed(
             title="Player Information",
-            description=f"Details for **{ctx.author.display_name}** \n :id: Application ID : {row[0]}",
+            description=f"Details for **{ctx.author.display_name}** \n Application ID : {row[0]}",
             color=discord.Color.green(),
         )
 
@@ -964,6 +817,13 @@ class Whitelist(discord.ui.Modal):
         if len(self.children[3].value) > 3000:
             await interaction.response.send_message(
                 "Character Backstory Below 3000 Characters Is Appretiated",
+                ephemeral=True,
+            )
+            return
+
+        if len(self.children[3].value) < 100:
+            await interaction.response.send_message(
+                "Character Backstory Above 100 Characters Is Appretiated",
                 ephemeral=True,
             )
             return
