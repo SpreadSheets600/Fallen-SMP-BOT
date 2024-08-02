@@ -43,7 +43,7 @@ async def send_to_discord(message):
     if channel:
         await channel.send(message)
     else:
-        logging.error(f"Channel ID : {SFTP_Channel_ID} ")
+        logging.error(f"Channel ID : {SFTP_Channel_ID} not found.")
 
 
 async def follow_sftp(sftp, logfile_path):
@@ -66,38 +66,41 @@ async def read_and_send_logs():
 async def connect_sftp():
     global sftp_client, transport
 
-    while True:
+    retry_attempt = 0
+    max_retries = 5  # Maximum number of retry attempts
+
+    while retry_attempt < max_retries:
         try:
             transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
             transport.connect(username=SFTP_USER, password=SFTP_PASSWORD)
             sftp_client = paramiko.SFTPClient.from_transport(transport)
             logging.info("Connected To SFTP - Loaded LOG File")
             await read_and_send_logs()
-
-        except (
-            paramiko.AuthenticationException,
-            paramiko.SSHException,
-            FileNotFoundError,
-        ) as e:
-            logging.error(f"Connection Error: {e}. Reconnecting In 1 Minute ...")
-            await asyncio.sleep(60)
+            break  # Exit loop if connection is successful
+        except (paramiko.AuthenticationException, paramiko.SSHException, FileNotFoundError) as e:
+            logging.error(f"Connection error: {e}. Retrying in {2 ** retry_attempt} seconds...")
+            await asyncio.sleep(2 ** retry_attempt)  # Exponential backoff
+            retry_attempt += 1
         except Exception as e:
-            logging.error(f"Unexpected Error: {e}. Reconnecting In 1 Minute ...")
-            await asyncio.sleep(60)
+            logging.error(f"Unexpected error: {e}. Retrying in {2 ** retry_attempt} seconds...")
+            await asyncio.sleep(2 ** retry_attempt)  # Exponential backoff
+            retry_attempt += 1
         finally:
             if sftp_client:
                 sftp_client.close()
             if transport:
                 transport.close()
 
+    if retry_attempt >= max_retries:
+        logging.error("Max retry attempts reached. Unable to connect to SFTP.")
 
 async def monitor_connection():
     global sftp_client, transport
 
     while True:
         await asyncio.sleep(60)
-        if not sftp_client or sftp_client.sock.closed:
-            logging.warning("Lost Connection To SFTP. Reconnecting ...")
+        if sftp_client is None or sftp_client.sock is None or sftp_client.sock.closed:
+            logging.warning("Lost connection to SFTP. Reconnecting...")
             if sftp_client:
                 sftp_client.close()
             if transport:
