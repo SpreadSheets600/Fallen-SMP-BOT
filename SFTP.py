@@ -25,7 +25,7 @@ ADMINS = [
     896411007797325824,
 ]
 
-SFTP_Channel_ID = 0
+SFTP_Channel_ID = 1267512160540426390
 
 SFTP_HOST = "pre-01.gbnodes.host"
 SFTP_USER = "bl_8262.1ab56acd"
