@@ -25,7 +25,7 @@ ADMINS = [
     896411007797325824,
 ]
 
-SFTP_Channel_ID = 1267512160540426390
+SFTP_Channel_ID = 0
 
 SFTP_HOST = "pre-01.gbnodes.host"
 SFTP_USER = "bl_8262.1ab56acd"
@@ -33,6 +33,9 @@ SFTP_PORT = 2222
 
 SFTP_PASSWORD = "i^g@z4g2bn9"
 LOG_FILE_PATH = "/logs/latest.log"
+
+sftp_client = None
+transport = None
 
 
 async def send_to_discord(message):
@@ -70,26 +73,35 @@ async def connect_sftp():
             sftp_client = paramiko.SFTPClient.from_transport(transport)
             logging.info("Connected To SFTP - Loaded LOG File")
             await read_and_send_logs()
-        except (
-            paramiko.AuthenticationException,
-            paramiko.SSHException,
-            FileNotFoundError,
-        ) as e:
-            logging.error(f"Connection error: {e}. Reconnecting In 1 Minutes ...")
+        except (paramiko.AuthenticationException, paramiko.SSHException, FileNotFoundError) as e:
+            logging.error(f"Connection error: {e}. Reconnecting in 5 seconds...")
+            await asyncio.sleep(5)
         except Exception as e:
-            logging.error(f"Unexpected error: {e}. Reconnecting In 1 Minutes ...")
+            logging.error(f"Unexpected error: {e}. Reconnecting in 5 seconds...")
+            await asyncio.sleep(5)
         finally:
             if sftp_client:
                 sftp_client.close()
             if transport:
                 transport.close()
 
+
+async def monitor_connection():
+    global sftp_client, transport
+
+    while True:
         await asyncio.sleep(60)
+        if not sftp_client or sftp_client.sock.closed:
+            logging.warning("Lost connection to SFTP. Reconnecting...")
+            if sftp_client:
+                sftp_client.close()
+            if transport:
+                transport.close()
+            await connect_sftp()
 
 
 @bot.event
 async def on_ready():
-
     start_time = datetime.datetime.now()
     bot.start_time = start_time
 
@@ -99,6 +111,7 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name="With Utilities"))
 
     bot.loop.create_task(connect_sftp())
+    bot.loop.create_task(monitor_connection())
 
 
 @bot.slash_command(
@@ -156,9 +169,7 @@ async def info(ctx: discord.ApplicationContext):
 
 @bot.slash_command(name="reconnect", description="Reconnects To The Server SFTP")
 async def reconnect(ctx):
-
     if ctx.author.id in ADMINS:
-
         await ctx.defer()
         global sftp_client, transport
 
@@ -174,8 +185,7 @@ async def reconnect(ctx):
         )
 
         await ctx.followup.send(embed=embed)
-        bot.loop.create_task(connect_sftp())
-
+        await connect_sftp()
     else:
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
