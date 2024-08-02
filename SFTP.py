@@ -73,12 +73,17 @@ async def connect_sftp():
             sftp_client = paramiko.SFTPClient.from_transport(transport)
             logging.info("Connected To SFTP - Loaded LOG File")
             await read_and_send_logs()
-        except (paramiko.AuthenticationException, paramiko.SSHException, FileNotFoundError) as e:
-            logging.error(f"Connection error: {e}. Reconnecting in 5 seconds...")
-            await asyncio.sleep(5)
+
+        except (
+            paramiko.AuthenticationException,
+            paramiko.SSHException,
+            FileNotFoundError,
+        ) as e:
+            logging.error(f"Connection Error: {e}. Reconnecting In 1 Minute ...")
+            await asyncio.sleep(60)
         except Exception as e:
-            logging.error(f"Unexpected error: {e}. Reconnecting in 5 seconds...")
-            await asyncio.sleep(5)
+            logging.error(f"Unexpected Error: {e}. Reconnecting In 1 Minute ...")
+            await asyncio.sleep(60)
         finally:
             if sftp_client:
                 sftp_client.close()
@@ -92,7 +97,7 @@ async def monitor_connection():
     while True:
         await asyncio.sleep(60)
         if not sftp_client or sftp_client.sock.closed:
-            logging.warning("Lost connection to SFTP. Reconnecting...")
+            logging.warning("Lost Connection To SFTP. Reconnecting ...")
             if sftp_client:
                 sftp_client.close()
             if transport:
