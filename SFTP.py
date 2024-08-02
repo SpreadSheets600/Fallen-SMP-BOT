@@ -75,16 +75,16 @@ async def connect_sftp():
             paramiko.SSHException,
             FileNotFoundError,
         ) as e:
-            logging.error(f"Connection error: {e}. Reconnecting In 5 Minutes ...")
+            logging.error(f"Connection error: {e}. Reconnecting In 1 Minutes ...")
         except Exception as e:
-            logging.error(f"Unexpected error: {e}. Reconnecting In 5 Minutes ...")
+            logging.error(f"Unexpected error: {e}. Reconnecting In 1 Minutes ...")
         finally:
             if sftp_client:
                 sftp_client.close()
             if transport:
                 transport.close()
 
-        await asyncio.sleep(5 * 60)
+        await asyncio.sleep(60)
 
 
 @bot.event
