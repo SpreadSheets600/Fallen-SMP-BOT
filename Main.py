@@ -614,7 +614,7 @@ async def show_whitelist(ctx: discord.ApplicationContext):
             )
 
             for i, row in enumerate(rows):
-                if i > 0 and i % 10 == 0:
+                if i > 0 and i % 5 == 0:
                     embeds.append(embed)
                     embed = discord.Embed(
                         title="Whitelisted Members (Continued)",
@@ -669,7 +669,7 @@ async def whitelist(ctx):
             color=discord.Color.green(),
         )
         embed.add_field(name="Server IP", value="play.fallensmp.xyz", inline=True)
-        embed.add_field(name="Server Version", value="1.21.1", inline=True)
+        embed.add_field(name="Server Version", value="1.21", inline=True)
 
         embed.set_image(
             url="https://media.discordapp.net/attachments/1258116175758364673/1266046626548678819/FALLEN_SMP.gif?ex=66a3b94d&is=66a267cd&hm=b80fdae6a297eeb179347003f57935b5edf601dfbb5433937e9cbb4a9f1493c5&=&width=1024&height=320"
@@ -760,6 +760,13 @@ class Whitelist_View(discord.ui.View):
 
         self.interaction_user = interaction_user
 
+        button_website = discord.ui.Button(
+            label="Website",
+            style=discord.ButtonStyle.url,
+            url="https://fallensmp.xyz",
+        )
+        self.add_item(button_website)
+
     @discord.ui.button(label="Whitelist Form")
     async def button_callback(self, button, interaction):
 
@@ -820,7 +827,21 @@ class Whitelist(discord.ui.Modal):
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
-        cursor.execute(
+        data = cursor.execute("SELECT * FROM user_data WHERE discord_user_id = ?", (str(interaction.user.id),)).fetchone()
+
+        if data:
+            embed = discord.Embed(
+                title=f"Application Already Submitted",
+                description=f"If You Messed Up Your Application, Contact <@727012870683885578> Or <@664157606587138048>",
+                color=discord.Color.green(),
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        else:
+
+            cursor.execute(
             """
             INSERT INTO user_data (
                 discord_user_id,
@@ -838,20 +859,6 @@ class Whitelist(discord.ui.Modal):
                 self.children[3].value,
             ),
         )
-
-        data = cursor.execute("SELECT * FROM user_data WHERE discord_user_id = ?", (str(interaction.user.id),)).fetchone()
-
-        if data:
-            embed = discord.Embed(
-                title=f"Application Already Submitted",
-                description=f"If You Messed Up Your Application, Contact <@727012870683885578> Or <@664157606587138048>",
-                color=discord.Color.green(),
-            )
-
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        else:
 
             print("Data Inserted")
 
