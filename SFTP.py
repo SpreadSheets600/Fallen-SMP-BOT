@@ -1,48 +1,28 @@
-import logging
-import discord
+import time
+import pysftp
 import asyncio
+import discord
 import datetime
-import paramiko
-import warnings
 from discord.ext import commands
-from cryptography.utils import CryptographyDeprecationWarning
 
-warnings.filterwarnings(
-    "ignore", category=CryptographyDeprecationWarning, module="paramiko"
-)
+HOST_NAME = "pre-01.gbnodes.host"
+USERNAME = "bl_8262.1ab56acd"
+PASSWORD = "i^g@z4g2bn9"
+PORT = 2222
 
-logging.basicConfig(level=logging.INFO)
+LOG_FILE_PATH = "/logs/latest.log"
+LOG_CHANNEL_ID = 1267512160540426390
 
 intents = discord.Intents.all()
-bot = discord.Bot(intents=intents)
-
-ADMINS = [
-    727012870683885578,
-    437622938242514945,
-    243042987922292738,
-    664157606587138048,
-    1188730953217097811,
-    896411007797325824,
-]
-
-SFTP_Channel_ID = 1267512160540426390
-
-SFTP_HOST = "pre-01.gbnodes.host"
-SFTP_USER = "bl_8262.1ab56acd"
-SFTP_PORT = 2222
-
-SFTP_PASSWORD = "i^g@z4g2bn9"
-LOG_FILE_PATH = "/logs/latest.log"
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 sftp_client = None
-transport = None
 
-async def send_to_discord(message):
-    channel = bot.get_channel(SFTP_Channel_ID)
-    if channel:
-        await channel.send(message)
-    else:
-        logging.error(f"Channel ID : {SFTP_Channel_ID} not found.")
+
+async def send_to_discord(line):
+    channel = bot.get_channel(LOG_CHANNEL_ID)
+    await channel.send(f"{line}")
+
 
 async def follow_sftp(sftp, logfile_path):
     with sftp.open(logfile_path, "r") as logfile:
@@ -54,77 +34,87 @@ async def follow_sftp(sftp, logfile_path):
                 continue
             yield line.strip()
 
+
 async def read_and_send_logs():
     global sftp_client
-    async for line in follow_sftp(sftp_client, LOG_FILE_PATH):
-        await send_to_discord(line)
-
-async def connect_sftp():
-    global sftp_client, transport
-
-    retry_attempt = 0
-    max_retries = 5  # Maximum number of retry attempts
-
-    while retry_attempt < max_retries:
-        try:
-            logging.info("Attempting to connect to SFTP...")
-            transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
-            transport.connect(username=SFTP_USER, password=SFTP_PASSWORD)
-            sftp_client = paramiko.SFTPClient.from_transport(transport)
-            logging.info("Connected To SFTP - Loaded LOG File")
-
-            # Schedule keep-alive packets
-            bot.loop.create_task(send_keepalive_packets(transport))
-
-            await read_and_send_logs()
-            break  # Exit loop if connection is successful
-        except (paramiko.AuthenticationException, paramiko.SSHException, FileNotFoundError) as e:
-            logging.error(f"Connection error: {e}. Retrying in {2 ** retry_attempt} seconds...")
-            await asyncio.sleep(2 ** retry_attempt)  # Exponential backoff
-            retry_attempt += 1
-        except Exception as e:
-            logging.error(f"Unexpected error: {e}. Retrying in {2 ** retry_attempt} seconds...")
-            await asyncio.sleep(2 ** retry_attempt)  # Exponential backoff
-            retry_attempt += 1
-        finally:
-            if sftp_client:
-                sftp_client.close()
-            if transport:
-                transport.close()
-
-    if retry_attempt >= max_retries:
-        logging.error("Max retry attempts reached. Unable to connect to SFTP.")
-
-async def send_keepalive_packets(transport):
-    while transport.is_active():
-        transport.send_ignore()  # Send keep-alive packet
-        await asyncio.sleep(30)  # Keep-alive interval (adjust as needed)
-
-async def monitor_connection():
-    global sftp_client, transport
-
     while True:
-        await asyncio.sleep(60)
-        if sftp_client is None or sftp_client.sock is None or sftp_client.sock.closed:
-            logging.warning("Lost connection to SFTP. Reconnecting...")
-            if sftp_client:
-                sftp_client.close()
-            if transport:
-                transport.close()
-            await connect_sftp()
+        try:
+            async for line in follow_sftp(sftp_client, LOG_FILE_PATH):
+                await send_to_discord(line)
+        except Exception as e:
+            print(f"Connection Lost : {e}")
+
+            user_id = 727012870683885578
+            user = bot.get_user(user_id)
+
+            if user:
+                await user.send(f"Connection Lost : {e}")
+
+            await asyncio.sleep(120)
+            await reconnect_sftp()
+
+
+async def reconnect_sftp():
+    global sftp_client
+    while True:
+        try:
+            cnopts = pysftp.CnOpts()
+            cnopts.hostkeys = None
+            sftp_client = pysftp.Connection(
+                host=HOST_NAME,
+                username=USERNAME,
+                password=PASSWORD,
+                port=PORT,
+                cnopts=cnopts,
+            )
+            print("Reconnected To SFTP Server")
+            break
+        except Exception as e:
+            print(f"Reconnection Attempt Failed : {e}")
+
+            user_id = 727012870683885578
+            user = bot.get_user(user_id)
+
+            if user:
+                await user.send(f"Reconnection Attempt Failed : {e}")
+
+            await asyncio.sleep(120)
+
 
 @bot.event
 async def on_ready():
+    global sftp_client
+
     start_time = datetime.datetime.now()
     bot.start_time = start_time
 
     print("-----------------------------")
     print("--- + Fallener SFTP + ---")
     print("-----------------------------")
-    await bot.change_presence(activity=discord.Game(name="With Utilities"))
+    await bot.change_presence(activity=discord.Game(name="With SFTP"))
 
-    bot.loop.create_task(connect_sftp())
-    bot.loop.create_task(monitor_connection())
+    try:
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys = None
+
+        sftp_client = pysftp.Connection(
+            host=HOST_NAME,
+            username=USERNAME,
+            password=PASSWORD,
+            port=PORT,
+            cnopts=cnopts,
+        )
+        bot.loop.create_task(read_and_send_logs())
+    except Exception as e:
+        print(f"Taar Kaath Diya : {e}")
+        await reconnect_sftp()
+
+
+@bot.slash_command(name="reconnect", description="Reconnect to SFTP Server")
+async def reconnect(ctx):
+    await reconnect_sftp()
+    await ctx.send("Reconnected To SFTP Server")
+
 
 @bot.slash_command(
     name="ping",
@@ -144,6 +134,7 @@ async def ping(ctx: discord.ApplicationContext):
     )
 
     await ctx.respond(embed=embed)
+
 
 @bot.slash_command(
     name="info",
@@ -177,26 +168,5 @@ async def info(ctx: discord.ApplicationContext):
     embed.set_thumbnail(url=bot.user.avatar.url)
     await ctx.respond(embed=embed)
 
-@bot.slash_command(name="reconnect", description="Reconnects To The Server SFTP")
-async def reconnect(ctx):
-    if ctx.author.id in ADMINS:
-        await ctx.defer()
-        global sftp_client, transport
-
-        if sftp_client:
-            sftp_client.close()
-        if transport:
-            transport.close()
-
-        embed = discord.Embed(
-            title="Server SFTP",
-            description="SFTP Have Been Reconnected",
-            color=discord.Color.green(),
-        )
-
-        await ctx.followup.send(embed=embed)
-        await connect_sftp()
-    else:
-        await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 bot.run("MTI2ODU4MTQ4NTg3MTUwMTM1NA.GNWFSy.8h9dd3OnwQWfyqmAeXk37OyyVgt1EXWuDz2T40")

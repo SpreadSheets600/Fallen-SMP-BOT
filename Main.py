@@ -3,10 +3,12 @@ import base64
 import sqlite3
 import discord
 import aiohttp
+import finnhub
 import datetime
 from io import BytesIO
 from discord import option
 from discord.ext import commands
+from discord.commands import SlashCommandGroup
 
 intents = discord.Intents.all()
 bot = discord.AutoShardedBot(intents=intents)
@@ -26,6 +28,9 @@ ADMINS = [
     896411007797325824,
 ]
 
+FINNHUB_API_KEY = "cqnpr21r01qo8864oasgcqnpr21r01qo8864oat0"
+finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
+
 conn = sqlite3.connect("User.db")
 cursor = conn.cursor()
 
@@ -43,6 +48,25 @@ CREATE TABLE IF NOT EXISTS user_data (
 """
 )
 
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS stocks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        TCS INTEGER DEFAULT 0,
+        AMD INTEGER DEFAULT 0,
+        INTC INTEGER DEFAULT 0,
+        MSFT INTEGER DEFAULT 0,
+        AAPL INTEGER DEFAULT 0,
+        GOOGL INTEGER DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES user_data(id)
+    )
+    """
+)
+
+conn.commit()
+conn.close()
+
 API_URL = "https://api.mcsrvstat.us/3/pre-01.gbnodes.host:25610"
 
 
@@ -56,6 +80,116 @@ async def on_ready():
     print("--- + Fallener Utilities + ---")
     print("-----------------------------")
     await bot.change_presence(activity=discord.Game(name="With Utilities"))
+
+    for command in bot.walk_application_commands():
+        print(f"--- + Loaded : {command.name} ")
+
+
+@bot.slash_command(
+    name="stock_quote",
+    description="Get Stock Quote",
+)
+@option(
+    "symbol",
+    description="Stock Symbol",
+    choices=["AMD", "AAPL", "INTC", "MSFT", "TCS", "GOOGL"],
+)
+async def quote(ctx: discord.ApplicationContext, symbol: str):
+    try:
+        quote = finnhub_client.quote(symbol)
+
+        if quote:
+            embed = discord.Embed(
+                title=f"{symbol.upper()} Stock Quote",
+                describtion=f"## Current Price : ${quote['c']}",
+                color=discord.Color.green(),
+            )
+
+            await ctx.respond(embed=embed)
+    except Exception as e:
+        await ctx.respond(e, ephemeral=True)
+
+
+def fetch_news(symbol):
+    today = datetime.datetime.today()
+    date = today.strftime("%Y-%m-%d")
+    return finnhub_client.company_news(symbol, _from=date, to=date)
+
+
+class NewsPagination(discord.ui.View):
+    def __init__(self, news_list):
+        super().__init__(timeout=60)
+        self.news_list = news_list
+        self.index = 0
+        self.update_button_states()
+
+    async def update_message(self, interaction):
+        news = self.news_list[self.index]
+        embed = discord.Embed(
+            title=news["headline"],
+            description=news["summary"],
+            url=news["url"],
+            color=0x2F3136,
+        )
+        embed.set_image(url=news.get("image", ""))
+        embed.set_footer(text=f"Source : {news['source']}")
+
+        await interaction.response.edit_message(embed=embed)
+
+    def update_button_states(self):
+        self.previous_button.disabled = self.index == 0
+        self.next_button.disabled = self.index >= len(self.news_list) - 1
+
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.primary, disabled=False)
+    async def previous_button(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+        if self.index > 0:
+            self.index -= 1
+            await self.update_message(interaction)
+            self.update_button_states()
+            await interaction.message.edit(view=self)
+
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.primary, disabled=False)
+    async def next_button(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+        if self.index < len(self.news_list) - 1:
+            self.index += 1
+            await self.update_message(interaction)
+            self.update_button_states()
+            await interaction.message.edit(view=self)
+
+
+@bot.slash_command(
+    name="stock_news",
+    description="Get Stock News",
+)
+@option(
+    "symbol",
+    description="Stock Symbol",
+    choices=["AMD", "AAPL", "INTC", "MSFT", "TCS", "GOOGL"],
+)
+async def news(ctx: discord.ApplicationContext, symbol: str):
+    news_list = fetch_news(symbol)
+    if not news_list:
+        await ctx.respond("No News Found", ephemeral=True)
+        return
+
+    view = NewsPagination(news_list)
+    await ctx.respond(embed=create_embed(news_list[0]), view=view)
+
+
+def create_embed(news):
+    embed = discord.Embed(
+        title=news["headline"],
+        description=news["summary"],
+        url=news["url"],
+        color=0x2F3136,
+    )
+    embed.set_image(url=news.get("image", ""))
+    embed.set_footer(text=f"Source : {news['source']}")
+    return embed
 
 
 @bot.slash_command(
@@ -564,6 +698,155 @@ async def add_whitelist(
         await ctx.respond("Laude Ye Tereliye Nehi Hai :F", ephemeral=True)
 
 
+@bot.slash_command(name="stock_buy", description="Buy Stocks")
+@option(
+    "symbol",
+    description="Stock Symbol",
+    choices=["AMD", "AAPL", "INTC", "MSFT", "TCS", "GOOGL"],
+)
+@option("amt", description="Amount to Buy", type=int)
+async def stock_buy(ctx: discord.ApplicationContext, symbol: str, amt: int):
+    conn = sqlite3.connect("User.db")
+    cursor = conn.cursor()
+
+    user_id = ctx.author.id
+
+    try:
+
+        cursor.execute(
+            f"""
+            UPDATE stocks
+            SET {symbol} = {symbol} + ?
+            WHERE user_id = ?
+            """,
+            (amt, user_id)
+        )
+
+        if cursor.rowcount == 0:
+
+            cursor.execute(
+                """
+                INSERT INTO stocks (user_id, {symbol})
+                VALUES (?, ?)
+                """.format(symbol=symbol),
+                (user_id, amt)
+            )
+
+        conn.commit()
+
+        cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?", (str(user_id),)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            user = row[2]
+            price = finnhub_client.quote(symbol)["c"]
+            total_price = price * amt
+
+            console_channel = bot.get_channel(console_channel_id)
+            await console_channel.send(f"eco take {user} {total_price}")
+
+            embed = discord.Embed(
+                title="Stock Bought",
+                description=f"Successfully bought {amt} unit(s) of {symbol}. Total cost: {total_price}",
+                color=discord.Color.green(),
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+        else:
+            await ctx.respond("User Data Not Found", ephemeral=True)
+
+        conn.commit()
+
+    except Exception as e:
+        await ctx.respond(f"Error Occurred : {e}", ephemeral=True)
+
+    finally:
+        conn.close()
+
+
+# @bot.slash_command(name="balance", description="Get User Balance")
+# async def balance(ctx: discord.ApplicationContext):
+
+#     console_channel = bot.get_channel(console_channel_id)
+
+
+@bot.slash_command(name="stock_sell", description="Sell Stocks")
+@option(
+    "symbol",
+    description="Stock Symbol",
+    choices=["AMD", "AAPL", "INTC", "MSFT", "TCS", "GOOGL"],
+)
+@option("amt", description="Amount to Sell", type=int)
+async def stock_sell(ctx: discord.ApplicationContext, symbol: str, amt: int):
+    conn = sqlite3.connect("User.db")
+    cursor = conn.cursor()
+
+    user_id = ctx.author.id
+
+    try:
+
+        cursor.execute(
+            f"""
+            SELECT {symbol} FROM stocks
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+        row = cursor.fetchone()
+
+        if row:
+            current_quantity = row[0]
+
+            if current_quantity >= amt:
+
+                cursor.execute(
+                    f"""
+                    UPDATE stocks
+                    SET {symbol} = {symbol} - ?
+                    WHERE user_id = ?
+                    """,
+                    (amt, user_id),
+                )
+
+                cursor.execute(
+                    "SELECT * FROM user_data WHERE discord_user_id = ?", (str(user_id),)
+                )
+                row = cursor.fetchone()
+
+                if row:
+                    user = row[2]
+                    price = finnhub_client.quote(symbol)["c"]
+                    total_price = price * amt
+
+                    console_channel = bot.get_channel(console_channel_id)
+                    await console_channel.send(f"eco add {user} {total_price}")
+
+                    embed = discord.Embed(
+                        title="Stock Sold",
+                        description=f"Successfully sold {amt} unit(s) of {symbol}. Total received: {total_price}",
+                        color=discord.Color.red(),
+                    )
+                    await ctx.respond(embed=embed, ephemeral=True)
+                else:
+                    await ctx.respond("User Data Not Found", ephemeral=True)
+            else:
+                await ctx.respond(
+                    "You Do Not Have Enough Stock To Sell", ephemeral=True
+                )
+
+        else:
+            await ctx.respond("No Data Not Found", ephemeral=True)
+
+        conn.commit()
+
+    except Exception as e:
+        await ctx.respond(f"Error Occurred : {e}", ephemeral=True)
+
+    finally:
+        conn.close()
+
+
 class WhitelistView(discord.ui.View):
     def __init__(self, embeds):
         super().__init__()
@@ -827,7 +1110,10 @@ class Whitelist(discord.ui.Modal):
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
-        data = cursor.execute("SELECT * FROM user_data WHERE discord_user_id = ?", (str(interaction.user.id),)).fetchone()
+        data = cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?",
+            (str(interaction.user.id),),
+        ).fetchone()
 
         if data:
             embed = discord.Embed(
@@ -842,7 +1128,7 @@ class Whitelist(discord.ui.Modal):
         else:
 
             cursor.execute(
-            """
+                """
             INSERT INTO user_data (
                 discord_user_id,
                 minecraft_username,
@@ -851,14 +1137,21 @@ class Whitelist(discord.ui.Modal):
                 character_backstory
             ) VALUES (?, ?, ?, ?, ?)
         """,
-            (
-                str(interaction.user.id),
-                self.children[0].value,
-                self.children[1].value,
-                self.children[2].value,
-                self.children[3].value,
-            ),
-        )
+                (
+                    str(interaction.user.id),
+                    self.children[0].value,
+                    self.children[1].value,
+                    self.children[2].value,
+                    self.children[3].value,
+                ),
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO stocks (user_id) VALUES (? )
+                """,
+                (str(interaction.user.id),),
+            )
 
             print("Data Inserted")
 
