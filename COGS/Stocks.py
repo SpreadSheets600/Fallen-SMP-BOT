@@ -523,7 +523,7 @@ class Stocks(commands.Cog):
                     inline=True,
                 )
 
-                await ctx.respond(embeds=crypto_embed)
+                await ctx.respond(embed=crypto_embed)
             else:
                 await ctx.respond("No Portfolio Found", ephemeral=True)
         except Exception as e:
