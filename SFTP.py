@@ -65,6 +65,8 @@ async def reconnect_sftp():
                 cnopts=cnopts,
             )
 
+            bot.loop.create_task(read_and_send_logs())
+
             user_id = 727012870683885578
             user = bot.get_user(user_id)
 
@@ -116,7 +118,7 @@ async def on_ready():
 @bot.slash_command(name="reconnect", description="Reconnect to SFTP Server")
 async def reconnect(ctx):
     await reconnect_sftp()
-    await ctx.send("Reconnected To SFTP Server")
+    await ctx.respond("Reconnected To SFTP Server")
 
 
 @bot.slash_command(name="ping", description="Check Bot's Latency & Uptime")
