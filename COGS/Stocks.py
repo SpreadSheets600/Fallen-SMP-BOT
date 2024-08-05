@@ -466,7 +466,7 @@ class Stocks(commands.Cog):
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                SELECT * FROM crypto WHERE user_id = ?
+                SELECT * FROM stocks WHERE user_id = ?
                 """,
                 (str(ctx.author.id),),
             )
@@ -558,7 +558,7 @@ class Stocks(commands.Cog):
                 cursor = self.conn.cursor()
                 cursor.execute(
                     f"""
-                    SELECT {symbol} FROM crypto WHERE user_id = ?
+                    SELECT {symbol} FROM stocks WHERE user_id = ?
                     """,
                     (str(ctx.author.id),),
                 )

@@ -490,6 +490,7 @@ class View_Players(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+bot.load_extension("COGS.Help")
 bot.load_extension("COGS.Stocks")
 bot.load_extension("COGS.Whitelist")
 
