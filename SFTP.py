@@ -10,27 +10,34 @@ USERNAME = "bl_8262.1ab56acd"
 PASSWORD = "i^g@z4g2bn9"
 PORT = 2222
 
+
 LOG_FILE_PATH = "/logs/latest.log"
 LOG_CHANNEL_ID = 1267512160540426390
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = discord.Bot(intents=intents)
 
 sftp_client = None
+last_position = 0
 
 
 async def send_to_discord(line):
     channel = bot.get_channel(LOG_CHANNEL_ID)
-    await channel.send(f"{line}")
+    await channel.send(line)
 
 
 async def follow_sftp(sftp, logfile_path):
+    global last_position
     with sftp.open(logfile_path, "r") as logfile:
-        logfile.seek(0, 2)
+        if last_position == 0:
+            logfile.seek(0, 2)
+        else:
+            logfile.seek(last_position)
         while True:
             line = logfile.readline()
             if not line:
-                await asyncio.sleep(0.1)
+                last_position = logfile.tell()
+                await asyncio.sleep(1)
                 continue
             yield line.strip()
 
@@ -43,13 +50,9 @@ async def read_and_send_logs():
                 await send_to_discord(line)
         except Exception as e:
             print(f"Connection Lost : {e}")
-
-            user_id = 727012870683885578
-            user = bot.get_user(user_id)
-
+            user = bot.get_user(727012870683885578)
             if user:
                 await user.send(f"Connection Lost : {e}")
-
             await asyncio.sleep(120)
             await reconnect_sftp()
 
@@ -67,14 +70,13 @@ async def reconnect_sftp():
                 port=PORT,
                 cnopts=cnopts,
             )
-            print("Reconnected To SFTP Server")
+            print("Reconnected to SFTP Server")
             break
+
         except Exception as e:
             print(f"Reconnection Attempt Failed : {e}")
 
-            user_id = 727012870683885578
-            user = bot.get_user(user_id)
-
+            user = bot.get_user(727012870683885578)
             if user:
                 await user.send(f"Reconnection Attempt Failed : {e}")
 
@@ -84,6 +86,7 @@ async def reconnect_sftp():
 @bot.event
 async def on_ready():
     global sftp_client
+    global last_position
 
     start_time = datetime.datetime.now()
     bot.start_time = start_time
@@ -104,22 +107,24 @@ async def on_ready():
             port=PORT,
             cnopts=cnopts,
         )
+
+        user = bot.get_user(727012870683885578)
+        if user:
+            await user.send("Connected to SFTP Server")
+
         bot.loop.create_task(read_and_send_logs())
     except Exception as e:
-        print(f"Taar Kaath Diya : {e}")
+        print(f"Connection Error : {e}")
         await reconnect_sftp()
 
 
 @bot.slash_command(name="reconnect", description="Reconnect to SFTP Server")
 async def reconnect(ctx):
     await reconnect_sftp()
-    await ctx.send("Reconnected To SFTP Server")
+    await ctx.send("Reconnected to SFTP Server")
 
 
-@bot.slash_command(
-    name="ping",
-    description="Check Bot's Latency & Uptime",
-)
+@bot.slash_command(name="ping", description="Check Bot's Latency & Uptime")
 async def ping(ctx: discord.ApplicationContext):
     latency = bot.latency * 1000
     uptime = datetime.datetime.now() - bot.start_time
@@ -129,17 +134,14 @@ async def ping(ctx: discord.ApplicationContext):
 
     embed = discord.Embed(
         title=":ping_pong: _*Pong !*_",
-        description=f"Uptime : {uptime_str}\nLatency : {latency:.2f} ms",
+        description=f"Uptime: {uptime_str}\nLatency: {latency:.2f} ms",
         color=0x2F3136,
     )
 
     await ctx.respond(embed=embed)
 
 
-@bot.slash_command(
-    name="info",
-    description="Get Bot Information",
-)
+@bot.slash_command(name="info", description="Get Bot Information")
 async def info(ctx: discord.ApplicationContext):
     embed = discord.Embed(
         title=":information_source: Application Info",
