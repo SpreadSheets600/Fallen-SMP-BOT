@@ -62,7 +62,7 @@ class Stocks(commands.Cog):
     )
     async def quote(self, ctx, symbol: str):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -99,7 +99,7 @@ class Stocks(commands.Cog):
         choices=["AMD", "APPLE", "INTEL", "MICROSOFT", "GOOGLE"],
     )
     async def company(self, ctx, symbol: str):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -152,7 +152,7 @@ class Stocks(commands.Cog):
         description="Get User Portfolio",
     )
     async def portfolio(self, ctx):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             cursor = self.conn.cursor()
@@ -253,7 +253,7 @@ class Stocks(commands.Cog):
         type=int,
     )
     async def sell(self, ctx, symbol: str, quantity: int):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -342,7 +342,7 @@ class Stocks(commands.Cog):
         type=int,
     )
     async def buy(self, ctx, symbol: str, quantity: int):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -404,7 +404,7 @@ class Stocks(commands.Cog):
     )
     async def news(self, ctx, symbol: str):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -438,7 +438,7 @@ class Stocks(commands.Cog):
     )
     async def quote(self, ctx, symbol: str):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             quote = self.finnhub_client.quote(symbol=symbol)
@@ -460,7 +460,7 @@ class Stocks(commands.Cog):
     )
     async def portfolio(self, ctx):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             cursor = self.conn.cursor()
@@ -546,7 +546,7 @@ class Stocks(commands.Cog):
     )
     async def sell(self, ctx, symbol: str, quantity: int):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             quote = self.finnhub_client.quote(symbol=symbol)
@@ -626,7 +626,7 @@ class Stocks(commands.Cog):
     )
     async def buy(self, ctx, symbol: str, quantity: int):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             quote = self.finnhub_client.quote(symbol=symbol)
@@ -677,7 +677,7 @@ class Stocks(commands.Cog):
     )
     async def news(self, ctx, symbol: str):
 
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         try:
             news = self.fetch_news(symbol)
@@ -716,7 +716,7 @@ class Stocks(commands.Cog):
         description="Get User Balance",
     )
     async def balance(self, ctx):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         await self.balance_check(ctx.author.id)
         await asyncio.sleep(3)

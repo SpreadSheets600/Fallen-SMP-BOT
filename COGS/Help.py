@@ -19,12 +19,12 @@ class Help(commands.Cog):
         ping = self.bot.get_command("ping")
         info = self.bot.get_command("info")
 
-        embed.add_field(name="Info", value=info.help, inline=False)
-        embed.add_field(name="Ping", value=ping.help, inline=False)
-        embed.add_field(name="Rules", value=rules.help, inline=False)
-        embed.add_field(name="Guide", value=guide.help, inline=False)
-        embed.add_field(name="Status", value=status.help, inline=False)
-        embed.add_field(name="Player Info", value=player.help, inline=False)
+        embed.add_field(name="Info", value=info.mention, inline=False)
+        embed.add_field(name="Ping", value=ping.mention, inline=False)
+        embed.add_field(name="Rules", value=rules.mention, inline=False)
+        embed.add_field(name="Guide", value=guide.mention, inline=False)
+        embed.add_field(name="Status", value=status.mention, inline=False)
+        embed.add_field(name="Player Info", value=player.mention, inline=False)
 
         await ctx.send(embed=embed, view=CEmbed(self.bot))
 
