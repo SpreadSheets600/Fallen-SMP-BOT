@@ -14,9 +14,10 @@ LOG_FILE_PATH = "/logs/latest.log"
 LOG_CHANNEL_ID = 1267512160540426390
 
 intents = discord.Intents.all()
-bot = discord.Bot(intents=intents)
+bot = commands.Bot(intents=intents)
 
 sftp_client = None
+last_position = 0
 
 
 async def send_to_discord(line):
@@ -25,12 +26,14 @@ async def send_to_discord(line):
 
 
 async def follow_sftp(sftp, logfile_path):
+    global last_position
     with sftp.open(logfile_path, "r") as logfile:
-        logfile.seek(0, 2)
+        logfile.seek(last_position, 0)
         while True:
             line = logfile.readline()
             if not line:
-                await asyncio.sleep(0.1)
+                last_position = logfile.tell()
+                await asyncio.sleep(1)
                 continue
             yield line.strip()
 
@@ -42,17 +45,17 @@ async def read_and_send_logs():
             async for line in follow_sftp(sftp_client, LOG_FILE_PATH):
                 await send_to_discord(line)
         except Exception as e:
-            print(f"Connection Lost : {e}")
+            print(f"Connection Lost: {e}")
             user_id = 727012870683885578
             user = bot.get_user(user_id)
             if user:
-                await user.send(f"Connection Lost : {e}")
+                await user.send(f"Connection Lost: {e}")
             await asyncio.sleep(120)
             await reconnect_sftp()
 
 
 async def reconnect_sftp():
-    global sftp_client
+    global sftp_client, last_position
     while True:
         try:
             cnopts = pysftp.CnOpts()
@@ -75,11 +78,11 @@ async def reconnect_sftp():
 
             break
         except Exception as e:
-            print(f"Reconnection Attempt Failed : {e}")
+            print(f"Reconnection Attempt Failed: {e}")
             user_id = 727012870683885578
             user = bot.get_user(user_id)
             if user:
-                await user.send(f"Reconnection Attempt Failed : {e}")
+                await user.send(f"Reconnection Attempt Failed: {e}")
             await asyncio.sleep(120)
 
 
@@ -111,7 +114,7 @@ async def on_ready():
 
         bot.loop.create_task(read_and_send_logs())
     except Exception as e:
-        print(f"Taar Kaath Diya : {e}")
+        print(f"Taar Kaath Diya: {e}")
         await reconnect_sftp()
 
 
