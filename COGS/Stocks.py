@@ -733,17 +733,22 @@ class Stocks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.id == 1268581485871501354:
-            broken = message.content.split(" ")
+        if message.author.id == 1261353536206274672:
 
-            if len(broken) > 6:
+            broken_line = message.content.split("\n")
+            broken = broken_line[1].split(" ")
 
-                if broken[4] in ["added", "taken"]:
+
+            if len(broken) > 4:
+
+                if broken[1] in ["added", "taken"]:
+
                     try:
                         cursor = self.conn.cursor()
                         balance = broken[-1]
+                        print(balance)
 
-                        if broken[4] == "taken":
+                        if broken[1] == "taken":
                             cursor.execute(
                                 f"""
                                 UPDATE stocks
@@ -760,7 +765,7 @@ class Stocks(commands.Cog):
                                 color=discord.Color.green(),
                             )
 
-                        elif broken[4] == "added":
+                        elif broken[1] == "added":
                             cursor.execute(
                                 f"""
                                 UPDATE stocks
@@ -785,8 +790,11 @@ class Stocks(commands.Cog):
                     except Exception as e:
                         pass
 
-            if broken[3] == "Balance":
-                self.balance = broken[-1]
+            if len(broken) > 3:
+
+                if broken[0] == "Balance":
+                    self.balance = broken[-1]
+                    print(self.balance)
 
 class NewsPagination(discord.ui.View):
     def __init__(self, news_list):

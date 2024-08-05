@@ -41,6 +41,9 @@ class Whitelist(commands.Cog):
                 cursor.execute(
                     "DELETE FROM user_data WHERE discord_user_id = ?", (str(member.id),)
                 )
+                cursor.execute(
+                    "DELETE FROM stocks WHERE user_id = ?", (str(member.id),)
+                )
                 conn.commit()
 
                 embed = discord.Embed(
@@ -329,7 +332,7 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 cursor.execute(
-                    "INSERT INTO stocks (discord_user_id) VALUES (?)",
+                    "INSERT INTO stocks (user_id) VALUES (?)",
                     (str(interaction.user.id),),
                 )
                 conn.commit()
