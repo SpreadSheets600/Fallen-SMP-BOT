@@ -19,11 +19,11 @@ class Help(commands.Cog):
         ping = self.bot.get_command("ping")
         info = self.bot.get_command("info")
 
-        embed.add_field(name="Info", value=info.mention, inline=False)
-        embed.add_field(name="Ping", value=ping.mention, inline=False)
-        embed.add_field(name="Rules", value=rules.mention, inline=False)
-        embed.add_field(name="Guide", value=guide.mention, inline=False)
-        embed.add_field(name="Status", value=status.mention, inline=False)
+        embed.add_field(name="Info", value=info.mention, inline=True)
+        embed.add_field(name="Ping", value=ping.mention, inline=True)
+        embed.add_field(name="Rules", value=rules.mention, inline=True)
+        embed.add_field(name="Guide", value=guide.mention, inline=True)
+        embed.add_field(name="Status", value=status.mention, inline=True)
         embed.add_field(name="Player Info", value=player.mention, inline=False)
 
         await ctx.send(embed=embed, view=CEmbed(self.bot))
@@ -51,24 +51,18 @@ class CEmbed(discord.ui.View):
                 title="Stocks", description="Stock Commands", color=0x2F3136
             )
 
-            stock_quote = {
-                self.bot.get_application_command("stock").subcommands[0].mention
-            }
-            stock_company = {
-                self.bot.get_application_command("stock").subcommands[1].mention
-            }
-            stock_portfolio = {
-                self.bot.get_application_command("stock").subcommands[2].mention
-            }
-            stock_sell = {
-                self.bot.get_application_command("stock").subcommands[3].mention
-            }
-            stock_buy = {
-                self.bot.get_application_command("stock").subcommands[4].mention
-            }
-            stock_news = {
-                self.bot.get_application_command("stock").subcommands[5].mention
-            }
+            stock_quote = self.bot.get_application_command("stock").subcommands[0].mention
+            
+            stock_company = self.bot.get_application_command("stock").subcommands[1].mention
+            
+            stock_portfolio = self.bot.get_application_command("stock").subcommands[2].mention
+            
+            stock_sell = self.bot.get_application_command("stock").subcommands[3].mention
+            
+            stock_buy = self.bot.get_application_command("stock").subcommands[4].mention
+            
+            stock_news = self.bot.get_application_command("stock").subcommands[5].mention
+            
 
             stock_embed.add_field(name="Buy", value=stock_buy, inline=False)
             stock_embed.add_field(name="Sell", value=stock_sell, inline=False)
@@ -84,21 +78,16 @@ class CEmbed(discord.ui.View):
                 title="Crypto", description="Crypto Commands", color=0x2F3136
             )
 
-            crypto_quote = {
-                self.bot.get_application_command("crypto").subcommands[0].mention
-            }
-            crypto_portfolio = {
-                self.bot.get_application_command("crypto").subcommands[1].mention
-            }
-            crypto_sell = {
-                self.bot.get_application_command("crypto").subcommands[2].mention
-            }
-            crypto_buy = {
-                self.bot.get_application_command("crypto").subcommands[3].mention
-            }
-            crypto_news = {
-                self.bot.get_application_command("crypto").subcommands[4].mention
-            }
+            crypto_quote = self.bot.get_application_command("crypto").subcommands[0].mention
+            
+            crypto_portfolio = self.bot.get_application_command("crypto").subcommands[1].mention
+            
+            crypto_sell = self.bot.get_application_command("crypto").subcommands[2].mention
+            
+            crypto_buy = self.bot.get_application_command("crypto").subcommands[3].mention
+            
+            crypto_news = self.bot.get_application_command("crypto").subcommands[4].mention
+            
 
             crypto_embed.add_field(name="Buy", value=crypto_buy, inline=False)
             crypto_embed.add_field(name="Sell", value=crypto_sell, inline=False)
@@ -115,18 +104,14 @@ class CEmbed(discord.ui.View):
                 title="Whitelist", description="Whitelist Commands", color=0x2F3136
             )
 
-            wh_delete = {
-                self.bot.get_application_command("whitelist").subcommands[0].mention
-            }
-            wh_add = {
-                self.bot.get_application_command("whitelist").subcommands[1].mention
-            }
-            wh_list = {
-                self.bot.get_application_command("whitelist").subcommands[2].mention
-            }
-            wh_form = {
-                self.bot.get_application_command("whitelist").subcommands[3].mention
-            }
+            wh_delete = self.bot.get_application_command("whitelist").subcommands[0].mention
+            
+            wh_add = self.bot.get_application_command("whitelist").subcommands[1].mention
+            
+            wh_list = self.bot.get_application_command("whitelist").subcommands[2].mention
+            
+            wh_form = self.bot.get_application_command("whitelist").subcommands[3].mention
+            
 
             wh_embed.add_field(name="Add", value=wh_add, inline=False)
             wh_embed.add_field(name="List", value=wh_list, inline=False)
