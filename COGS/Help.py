@@ -26,7 +26,7 @@ class Help(commands.Cog):
         embed.add_field(name="Status", value=status.mention, inline=True)
         embed.add_field(name="Player Info", value=player.mention, inline=False)
 
-        await ctx.send(embed=embed, view=CEmbed(self.bot))
+        await ctx.respond(embed=embed, view=CEmbed(self.bot))
 
 
 class CEmbed(discord.ui.View):
