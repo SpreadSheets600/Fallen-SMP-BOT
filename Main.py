@@ -410,7 +410,7 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
             embed.set_thumbnail(url=member.avatar.url)
             embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
 
-            await ctx.respond(embed=embed, view=View_Character_Info(member.id))
+            await ctx.respond(embed=embed, view=View_Character_Info(user_id = member.id, user = member))
         else:
             embed = discord.Embed(
                 title=":x: Player Data Not Found",
@@ -423,9 +423,10 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
 
 
 class View_Character_Info(discord.ui.View):
-    def __init__(self, user_id) -> None:
+    def __init__(self, user_id, user) -> None:
         super().__init__(timeout=None)
         self.user_id = user_id
+        self.user = user
 
     @discord.ui.button(label="View Character Info", style=discord.ButtonStyle.secondary)
     async def view_button_callback(self, button, interaction):
@@ -441,7 +442,7 @@ class View_Character_Info(discord.ui.View):
         if row:
             embed = discord.Embed(
                 title="Character Information",
-                description=f"Character For **{interaction.user.display_name}**",
+                description=f"Character For **{self.user.display_name}**",
                 color=discord.Color.green(),
             )
 
@@ -449,7 +450,7 @@ class View_Character_Info(discord.ui.View):
             embed.add_field(name="Character Gender", value=row[4], inline=True)
             embed.add_field(name="Character Backstory", value=row[5], inline=False)
 
-            embed.set_thumbnail(url=interaction.user.avatar.url)
+            embed.set_thumbnail(url=self.user.avatar.url)
             embed.set_footer(text=f"Fallen SMP | Joined on {row[6]}")
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
