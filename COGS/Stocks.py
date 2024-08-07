@@ -91,7 +91,10 @@ class Stocks(commands.Cog):
 
                 await ctx.respond(embed=embed)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
 
     @stock.command(
         name="company",
@@ -149,7 +152,10 @@ class Stocks(commands.Cog):
 
                 await ctx.respond(embed=embed)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
 
     @stock.command(
         name="portfolio",
@@ -239,7 +245,10 @@ class Stocks(commands.Cog):
             else:
                 await ctx.respond("No Portfolio Found", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @stock.command(
@@ -304,7 +313,9 @@ class Stocks(commands.Cog):
 
                     if stock >= quantity:
                         console_channel = self.bot.get_channel(self.console_channel_id)
-                        msg = await console_channel.send(f"eco give {user} {total_price}")
+                        msg = await console_channel.send(
+                            f"eco give {user} {total_price}"
+                        )
 
                         await ctx.respond(
                             "Sell Successful, Confirmation On Its Way!", ephemeral=True
@@ -330,7 +341,10 @@ class Stocks(commands.Cog):
                     )
 
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @stock.command(
@@ -398,7 +412,10 @@ class Stocks(commands.Cog):
                 self.channel_id = ctx.channel.id
 
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @stock.command(
@@ -433,7 +450,10 @@ class Stocks(commands.Cog):
                 view = NewsPagination(news_list)
                 await ctx.respond(embed=view.children[0].embed, view=view)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
 
     @crypto.command(
         name="quote",
@@ -460,7 +480,10 @@ class Stocks(commands.Cog):
 
                 await ctx.respond(embed=embed)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
 
     @crypto.command(
         name="portfolio",
@@ -527,7 +550,9 @@ class Stocks(commands.Cog):
                 )
                 crypto_embed.add_field(
                     name="PNL",
-                    value=(f"{round(eth_pnl)}\n{round(btc_pnl)}\n{round(bnb_pnl)}\n{round(sol_pnl)}\n{round(avax_pnl)}"),
+                    value=(
+                        f"{round(eth_pnl)}\n{round(btc_pnl)}\n{round(bnb_pnl)}\n{round(sol_pnl)}\n{round(avax_pnl)}"
+                    ),
                     inline=True,
                 )
 
@@ -535,7 +560,10 @@ class Stocks(commands.Cog):
             else:
                 await ctx.respond("No Portfolio Found", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @crypto.command(
@@ -591,7 +619,9 @@ class Stocks(commands.Cog):
 
                     if crypto >= quantity:
                         console_channel = self.bot.get_channel(self.console_channel_id)
-                        msg = await console_channel.send(f"eco give {user} {total_price}")
+                        msg = await console_channel.send(
+                            f"eco give {user} {total_price}"
+                        )
 
                         await ctx.respond(
                             "Sell Successful, Confirmation On Its Way!", ephemeral=True
@@ -617,7 +647,10 @@ class Stocks(commands.Cog):
                     )
 
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @crypto.command(
@@ -674,10 +707,11 @@ class Stocks(commands.Cog):
                 self.user_id = ctx.author.id
                 self.channel_id = ctx.channel.id
 
-                
-
         except Exception as e:
-            await ctx.resond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+            await ctx.resond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
+            )
             traceback.print_exc()
 
     @crypto.command(
@@ -701,29 +735,10 @@ class Stocks(commands.Cog):
                 view = NewsPagination(news_list)
                 await ctx.respond(embed=view.children[0].embed, view=view)
         except Exception as e:
-            await ctx.respond(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
-
-    async def balance_check(self, user_id):
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute(
-                """
-                SELECT * FROM user_data WHERE discord_user_id = ?
-                """,
-                (str(user_id),),
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
             )
-
-            row = cursor.fetchone()
-
-            if row:
-                user = row[2]
-
-                console_channel = self.bot.get_channel(self.console_channel_id)
-                await console_channel.send(f"balance {user}")
-
-        except Exception as e:
-            print(str(e))
-            traceback.print_exc()
 
     @commands.slash_command(
         name="balance",
@@ -732,113 +747,156 @@ class Stocks(commands.Cog):
     async def balance(self, ctx):
         await ctx.defer(ephemeral=True)
 
-        await self.balance_check(ctx.author.id)
-        await asyncio.sleep(3)
-
-        if self.balance:
-            embed = discord.Embed(
-                title="User Balance",
-                description=f"## Balance : {round(self.balance)}",
-                color=discord.Color.green(),
+        try :
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM user_data WHERE discord_user_id = ?
+                """,
+                (str(ctx.author.id),),
             )
-            await ctx.respond(embed=embed)
-        else:
+
+            row = cursor.fetchone()
+
+            if row:
+                user = row[2]
+
+                console_channel = self.bot.get_channel(self.console_channel_id)
+                msg = await console_channel.send(f"balance {user}")
+
+                await ctx.respond(
+                    "Balance Fetch Successful, Transcript On Its Way!", ephemeral=True
+                )
+
+                self.track_message = msg.id
+                self.channel_id = ctx.channel.id
+                self.name = ctx.author.display_name
+
+        except Exception as e:
             await ctx.respond(
-                "Unable To Retrieve Balance\nPlease Try Again Later", ephemeral=True
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                ephemeral=True,
             )
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.id == 1270255175579471963:
 
-            if self.track_message == message.id:
+            try:
+                if message.reference.message_id == self.track_message:
 
-                broken = message.content.split(" ")
+                    broken = message.content.split(" ")
 
-                if len(broken) > 4:
+                    if len(broken) > 4:
 
-                    if broken[1] in ["added", "taken"]:
+                        if broken[1] in ["added", "taken"]:
 
-                        try:
-                            cursor = self.conn.cursor()
-                            balance = broken[-1]    
+                            try:
+                                cursor = self.conn.cursor()
+                                balance = broken[-1]
 
-                            if broken[1] == "taken":
+                                if broken[1] == "taken":
 
-                                if self.symbol in [
-                                    "ETH-USD",
-                                    "BTC-USD",
-                                    "BNB-USD",
-                                    "SOL-USD",
-                                    "AVAX-USD",
-                                ]:
-                                    
-                                    print(self.symbol.split("-")[0])
+                                    if self.symbol in [
+                                        "ETH-USD",
+                                        "BTC-USD",
+                                        "BNB-USD",
+                                        "SOL-USD",
+                                        "AVAX-USD",
+                                    ]:
 
+                                        cursor.execute(
+                                            f"""
+                                            UPDATE stocks
+                                            SET {self.symbol.split("-")[0]} = {self.symbol.split("-")[0]} + ?,
+                                                {self.symbol.split("-")[0]}_price = ?
+                                            WHERE user_id = ?
+                                            """,
+                                            (self.quantity, self.buy_price, self.user_id),
+                                        )
+
+                                        embed = discord.Embed(
+                                            title=f"Crypto Purchased Report",
+                                            description=f"Account: {self.name}\n\nCrypto Purchased: {self.quantity}\nTotal Price: {round(self.price)}\nBalance: {balance}",
+                                            color=discord.Color.green(),
+                                        )
+
+                                    else:
+
+                                        cursor.execute(
+                                            f"""
+                                            UPDATE stocks
+                                            SET {self.symbol} = {self.symbol} + ?,
+                                                {self.symbol}_price = ?
+                                            WHERE user_id = ?
+                                            """,
+                                            (self.quantity, self.buy_price, self.user_id),
+                                        )
+
+                                        embed = discord.Embed(
+                                            title=f"Stock Purchased Report",
+                                            description=f"Account: {self.name}\n\nStocks Purchased : {self.quantity}\nTotal Price : {round(self.price)}\nBalance : {balance}",
+                                            color=discord.Color.green(),
+                                        )
+
+                                elif broken[1] == "added":
                                     cursor.execute(
                                         f"""
                                         UPDATE stocks
-                                        SET {self.symbol.split("-")[0]} = {self.symbol.split("-")[0]} + ?,
-                                            {self.symbol.split("-")[0]}_price = ?
-                                        WHERE user_id = ?
-                                        """,
-                                        (self.quantity, self.buy_price, self.user_id),
-                                    )
-
-                                    embed = discord.Embed(
-                                        title=f"{self.name} | Crypto Purchased",
-                                        description=f"Crypto Purchased: {self.quantity}\nTotal Price: {round(self.price)}\nBalance: {round(balance)}",
-                                        color=discord.Color.green(),
-                                    )
-
-                                else:
-
-                                    cursor.execute(
-                                        f"""
-                                        UPDATE stocks
-                                        SET {self.symbol} = {self.symbol} + ?,
+                                        SET {self.symbol} = {self.symbol} - ?,
                                             {self.symbol}_price = ?
                                         WHERE user_id = ?
                                         """,
-                                        (self.quantity, self.buy_price, self.user_id),
+                                        (self.quantity, 0, self.user_id),
                                     )
 
                                     embed = discord.Embed(
-                                        title=f"{self.name} | Stock Purchased",
-                                        description=f"Stocks Purchased : {self.quantity}\nTotal Price : {round(self.price)}\nBalance : {round(balance)}",
-                                        color=discord.Color.green(),
+                                        title=f"Stock Sold Report",
+                                        description=f"Account: {self.name}\n\nStocks Sold : {self.quantity}\nTotal Price: {round(self.price)}\nBalance Left : {balance}",
+                                        color=discord.Color.red(),
                                     )
 
-                            elif broken[1] == "added":
-                                cursor.execute(
-                                    f"""
-                                    UPDATE stocks
-                                    SET {self.symbol} = {self.symbol} - ?,
-                                        {self.symbol}_price = ?
-                                    WHERE user_id = ?
-                                    """,
-                                    (self.quantity, 0, self.user_id),
+                                self.conn.commit()
+                                send_channel = self.bot.get_channel(self.channel_id)
+                                await send_channel.send(embed=embed)
+                                self.reset_purchase_details()
+
+                            except Exception as e:
+                                send_channel = self.bot.get_channel(self.channel_id)
+                                await send_channel.send(
+                                    f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                                    ephemeral=True,
                                 )
 
+                    if len(broken) > 3:
+
+                        if broken[0] == "Balance":
+                            self.balance = broken[-1]
+
+                            if self.balance:
                                 embed = discord.Embed(
-                                    title=f"{self.name} | Stock Sold",
-                                    description=f"Stocks Sold : {self.quantity}\nTotal Price: {round(self.price)}\nBalance Left : {round(balance)}",
-                                    color=discord.Color.red(),
+                                    title=f"Balance Transcript",
+                                    description=f"### Account: {self.name}\n### Balance: {self.balance}",
+                                    color=discord.Color.green(),
                                 )
 
-                            self.conn.commit()
-                            send_channel = self.bot.get_channel(self.channel_id)
-                            await send_channel.send(embed=embed)
-                            self.reset_purchase_details()
+                                send_channel = self.bot.get_channel(self.channel_id)
+                                await send_channel.send(embed=embed)
 
-                        except Exception as e:
-                            await send_channel.send(f"```{str(e)}```\nYou Should probably Report This To <@727012870683885578>", ephemeral=True)
+                            else:
+                                
+                                embed = discord.Embed(
+                                    title="Unable To Fetch Balance",
+                                    description=f"### Please Try Again Later",
+                                    color=discord.Color.green(),
+                                )
 
-                if len(broken) > 3:
+                                self.reset_purchase_details()
+                                send_channel = self.bot.get_channel(self.channel_id)
+                                await send_channel.send(embed=embed)
 
-                    if broken[0] == "Balance":
-                        self.balance = broken[-1]
-
+            except Exception as e:
+                pass
 
 class NewsPagination(discord.ui.View):
     def __init__(self, news_list):
