@@ -13,9 +13,9 @@ ADMINS = [
     896411007797325824,
 ]
 
-whitelist_channel_id = 896411007797325824
-console_channel_id = 896411007797325824
-logs_channel_id = 896411007797325824
+whitelist_channel_id = 1267512076222595122
+console_channel_id = 1263898954999922720
+logs_channel_id = 1267512076222595122
 
 
 class Whitelist(commands.Cog):
@@ -194,7 +194,7 @@ class Whitelist(commands.Cog):
 
             await ctx.respond(
                 embed=embed,
-                view=WhitelistForm(interaction_user=ctx.user),
+                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot),
                 ephemeral=True,
             )
 
@@ -233,12 +233,15 @@ class WhitelistView(discord.ui.View):
 
 
 class WhitelistForm(discord.ui.View):
-    def __init__(self, interaction_user) -> None:
+    def __init__(self, interaction_user: discord.User, bot: commands.Bot) -> None:
         super().__init__(timeout=None)
         self.interaction_user = interaction_user
+        self.bot = bot
 
     @discord.ui.button(label="Whitelist Form")
-    async def button_callback(self, button, interaction):
+    async def button_callback(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ) -> None:
         if interaction.user != self.interaction_user:
             await interaction.response.send_message(
                 "You don't have permission to use this button.", ephemeral=True
@@ -246,13 +249,14 @@ class WhitelistForm(discord.ui.View):
             return
 
         await interaction.response.send_modal(
-            WhitelistModal(title="Fallen SMP Whitelist Form")
+            WhitelistModal(title="Fallen SMP Whitelist Form", bot=self.bot)
         )
 
 
 class WhitelistModal(discord.ui.Modal):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, bot, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.bot = bot
 
         self.add_item(
             discord.ui.InputText(
@@ -337,29 +341,16 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 conn.commit()
 
-                logs_channel = self.bot.get_channel(logs_channel_id)
+                print("Application Submitted")
+
                 embed = discord.Embed(
-                    title="New Whitelist Application",
-                    description=f"New Whitelist Application From **{interaction.user.display_name}**",
+                    title=f"Whitelist Application From {interaction.user.display_name}",
+                    description=f"Username : {self.children[0].value}\nCharacter Name : {self.children[1].value}\nCharacter Gender : {self.children[2].value}\n\nCharacter Backstory : {self.children[3].value}",
                     color=discord.Color.blue(),
                 )
 
-                embed.add_field(
-                    name="Minecraft Username", value=self.children[0].value, inline=True
-                )
-                embed.add_field(
-                    name="Character Name", value=self.children[1].value, inline=True
-                )
-                embed.add_field(
-                    name="Character Gender", value=self.children[2].value, inline=True
-                )
-                embed.add_field(
-                    name="Character Backstory",
-                    value=self.children[3].value,
-                    inline=False,
-                )
-
-                await logs_channel.send(embed=embed)
+                logs_channel = self.bot.get_channel(logs_channel_id)
+                await logs_channel.send(f"<@727012870683885578> <@437622938242514945> <@243042987922292738> <@664157606587138048> <@896411007797325824>",embed=embed)
 
                 success_embed = discord.Embed(
                     title="Application Submitted",
