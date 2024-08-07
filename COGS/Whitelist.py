@@ -282,6 +282,9 @@ class WhitelistModal(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
+
+        conn = sqlite3.connect("User.db")
+
         try:
             if len(self.children[3].value) > 3000:
                 await interaction.response.send_message(
@@ -297,7 +300,6 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            conn = sqlite3.connect("User.db")
             cursor = conn.cursor()
 
             data = cursor.execute(
