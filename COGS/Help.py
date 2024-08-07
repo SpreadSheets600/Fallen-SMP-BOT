@@ -24,7 +24,7 @@ class Help(commands.Cog):
         embed.add_field(name="Rules", value=rules.mention, inline=True)
         embed.add_field(name="Guide", value=guide.mention, inline=True)
         embed.add_field(name="Status", value=status.mention, inline=True)
-        embed.add_field(name="Player Info", value=player.mention, inline=False)
+        embed.add_field(name="Player Info", value=player.mention, inline=True)
 
         await ctx.respond(embed=embed, view=CEmbed(self.bot))
 
