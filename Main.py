@@ -382,42 +382,44 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
     if member == None:
         member = ctx.author
 
-    conn = sqlite3.connect("User.db")
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM user_data WHERE discord_user_id = ?", (str(ctx.author.id),)
-    )
-    rows = cursor.fetchall()
-
-    if rows:
-        row = rows[0]
-        embed = discord.Embed(
-            title="Player Information",
-            description=f"Details for **{ctx.author.display_name}** \n Application ID : {row[0]}",
-            color=discord.Color.green(),
-        )
-
-        embed.add_field(
-            name="Discord User ID",
-            value=f"{row[1]}({str(ctx.author.display_name)})",
-            inline=False,
-        )
-        embed.add_field(name="Minecraft Username", value=row[2], inline=False)
-
-        embed.set_thumbnail(url=ctx.author.avatar.url)
-        embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
-
-        await ctx.respond(embed=embed, view=View_Character_Info(ctx.author.id))
     else:
-        embed = discord.Embed(
-            title=":x: Player Data Not Found",
-            description="It Seems Like There Isn't Any Data For You. Make Sure To Submit The Whitelist Application.",
-            color=discord.Color.red(),
-        )
-        await ctx.respond(embed=embed, ephemeral=True)
+        
+        conn = sqlite3.connect("User.db")
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            "SELECT * FROM user_data WHERE discord_user_id = ?", (str(member.id),)
+        )
+        rows = cursor.fetchall()
+
+        if rows:
+            row = rows[0]
+            embed = discord.Embed(
+                title="Player Information",
+                description=f"Details for **{member.display_name}** \n Application ID : {row[0]}",
+                color=discord.Color.green(),
+            )
+
+            embed.add_field(
+                name="Discord User ID",
+                value=f"{row[1]}({str(member.display_name)})",
+                inline=False,
+            )
+            embed.add_field(name="Minecraft Username", value=row[2], inline=False)
+
+            embed.set_thumbnail(url=member.avatar.url)
+            embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
+
+            await ctx.respond(embed=embed, view=View_Character_Info(member.id))
+        else:
+            embed = discord.Embed(
+                title=":x: Player Data Not Found",
+                description="It Seems Like There Isn't Any Data For You. Make Sure To Submit The Whitelist Application.",
+                color=discord.Color.red(),
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+
+        conn.close()
 
 
 class View_Character_Info(discord.ui.View):
