@@ -747,7 +747,7 @@ class Stocks(commands.Cog):
     async def balance(self, ctx):
         await ctx.defer(ephemeral=True)
 
-        try :
+        try:
             cursor = self.conn.cursor()
             cursor.execute(
                 """
@@ -778,6 +778,29 @@ class Stocks(commands.Cog):
                 ephemeral=True,
             )
 
+    @commands.slash_command(
+        name="balance_top",
+        description="Get Top Balances In The Server",
+    )
+    async def topbalance(self, ctx):
+        await ctx.defer(ephemeral=True)
+
+        try:
+            cosole_channel = self.bot.get_channel(self.console_channel_id)
+            msg = await cosole_channel.send("balancetop")
+
+            await ctx.respond(
+                "Top Balances Fetch Successful, Transcript On Its Way!", ephemeral=True
+            )
+
+            self.track_message = msg.id
+            self.channel_id = ctx.channel.id
+
+        except Exception as e:
+            await ctx.respond(
+                f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>"
+            )
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.id == 1270255175579471963:
@@ -785,118 +808,211 @@ class Stocks(commands.Cog):
             try:
                 if message.reference.message_id == self.track_message:
 
-                    broken = message.content.split(" ")
+                    if message.content.startswith("Ordering") or message.content.startswith("Top"):
 
-                    if len(broken) > 4:
+                        embed = discord.Embed(
+                            title="Server Top Balances",
+                            description=f"Displaying Top Balances In The Server",
+                            color=discord.Color.green(),
+                        )
 
-                        if broken[1] in ["added", "taken"]:
+                        broken = message.content.split("\n")
 
-                            try:
-                                cursor = self.conn.cursor()
-                                balance = broken[-1]
+                        users = []
 
-                                if broken[1] == "taken":
+                        server_total = 0
+                        not_needed_bal = 0
+                        server_total_raw = (
+                            broken[3].split(" ")[-1].replace(",", "")[1:]
+                        )
 
-                                    if self.symbol in [
-                                        "ETH-USD",
-                                        "BTC-USD",
-                                        "BNB-USD",
-                                        "SOL-USD",
-                                        "AVAX-USD",
-                                    ]:
+                        for i in range(4, len(broken) - 1):
+                            user = broken[i]
 
+                            if user.split(" ")[1] == "SpreadSheets,":
+                                bal_idc = (user.split(" ")[-1].replace(",", "")[1:])
+                                not_needed_bal += float(bal_idc)
+
+                                server_total += float(server_total_raw) - not_needed_bal
+                                pass
+
+                            elif user.split(" ")[1] == "[":
+                                for us in user.split(" "):
+                                    print(us)
+
+                                users.append(user.split(" ")[4:])   
+                            else:
+                                users.append(user.split(" ")[1:])
+
+                        for user in users:
+                            user_id = user[0]
+                            print(user_id)
+
+                            if user_id[0] == "~":
+                                user_id = user_id[1:]
+
+                            user_balance = user[-1]
+
+                            cursor = self.conn.cursor()
+                            cursor.execute(
+                                """
+                                SELECT * FROM user_data
+                                """
+                            )
+
+                            rows = cursor.fetchall()
+
+                            discord_user_id = None
+
+                            for row in rows:
+                                if row[2] == user_id:
+                                    discord_user_id = row[1]
+
+                                    print(discord_user_id)
+
+                            if discord_user_id == None:
+                                embed.add_field(
+                                    name=f"{user_id}",
+                                    value=f"Balance: {user_balance}",
+                                    inline=False,
+                                )
+                            else:
+                                embed.add_field(
+                                    name=f"<@{discord_user_id}>",
+                                    value=f"User: {user_id}\nBalance: {user_balance}",
+                                    inline=False,
+                                )
+
+                        embed.set_footer(text=f"Server Total: ${round(server_total)}")
+
+                        send_channel = self.bot.get_channel(self.channel_id)
+                        await send_channel.send(embed=embed)
+
+                    else:
+                        broken = message.content.split(" ")
+
+                        if len(broken) > 4:
+
+                            if broken[1] in ["added", "taken"]:
+
+                                try:
+                                    cursor = self.conn.cursor()
+                                    balance = broken[-1]
+
+                                    if broken[1] == "taken":
+
+                                        if self.symbol in [
+                                            "ETH-USD",
+                                            "BTC-USD",
+                                            "BNB-USD",
+                                            "SOL-USD",
+                                            "AVAX-USD",
+                                        ]:
+
+                                            cursor.execute(
+                                                f"""
+                                                UPDATE stocks
+                                                SET {self.symbol.split("-")[0]} = {self.symbol.split("-")[0]} + ?,
+                                                    {self.symbol.split("-")[0]}_price = ?
+                                                WHERE user_id = ?
+                                                """,
+                                                (
+                                                    self.quantity,
+                                                    self.buy_price,
+                                                    self.user_id,
+                                                ),
+                                            )
+
+                                            embed = discord.Embed(
+                                                title=f"Crypto Purchased Report",
+                                                description=f"Account: {self.name}\n\nCrypto Purchased: {self.quantity}\nTotal Price: {round(self.price)}\nBalance: {balance}",
+                                                color=discord.Color.green(),
+                                            )
+
+                                        else:
+
+                                            cursor.execute(
+                                                f"""
+                                                UPDATE stocks
+                                                SET {self.symbol} = {self.symbol} + ?,
+                                                    {self.symbol}_price = ?
+                                                WHERE user_id = ?
+                                                """,
+                                                (
+                                                    self.quantity,
+                                                    self.buy_price,
+                                                    self.user_id,
+                                                ),
+                                            )
+
+                                            embed = discord.Embed(
+                                                title=f"Stock Purchased Report",
+                                                description=f"Account: {self.name}\n\nStocks Purchased : {self.quantity}\nTotal Price : {round(self.price)}\nBalance : {balance}",
+                                                color=discord.Color.green(),
+                                            )
+
+                                    elif broken[1] == "added":
                                         cursor.execute(
                                             f"""
                                             UPDATE stocks
-                                            SET {self.symbol.split("-")[0]} = {self.symbol.split("-")[0]} + ?,
-                                                {self.symbol.split("-")[0]}_price = ?
-                                            WHERE user_id = ?
-                                            """,
-                                            (self.quantity, self.buy_price, self.user_id),
-                                        )
-
-                                        embed = discord.Embed(
-                                            title=f"Crypto Purchased Report",
-                                            description=f"Account: {self.name}\n\nCrypto Purchased: {self.quantity}\nTotal Price: {round(self.price)}\nBalance: {balance}",
-                                            color=discord.Color.green(),
-                                        )
-
-                                    else:
-
-                                        cursor.execute(
-                                            f"""
-                                            UPDATE stocks
-                                            SET {self.symbol} = {self.symbol} + ?,
+                                            SET {self.symbol} = {self.symbol} - ?,
                                                 {self.symbol}_price = ?
                                             WHERE user_id = ?
                                             """,
-                                            (self.quantity, self.buy_price, self.user_id),
+                                            (self.quantity, 0, self.user_id),
                                         )
 
                                         embed = discord.Embed(
-                                            title=f"Stock Purchased Report",
-                                            description=f"Account: {self.name}\n\nStocks Purchased : {self.quantity}\nTotal Price : {round(self.price)}\nBalance : {balance}",
-                                            color=discord.Color.green(),
+                                            title=f"Stock Sold Report",
+                                            description=f"Account: {self.name}\n\nStocks Sold : {self.quantity}\nTotal Price: {round(self.price)}\nBalance Left : {balance}",
+                                            color=discord.Color.red(),
                                         )
 
-                                elif broken[1] == "added":
-                                    cursor.execute(
-                                        f"""
-                                        UPDATE stocks
-                                        SET {self.symbol} = {self.symbol} - ?,
-                                            {self.symbol}_price = ?
-                                        WHERE user_id = ?
-                                        """,
-                                        (self.quantity, 0, self.user_id),
+                                    self.conn.commit()
+                                    send_channel = self.bot.get_channel(self.channel_id)
+                                    await send_channel.send(embed=embed)
+                                    self.reset_purchase_details()
+
+                                except Exception as e:
+                                    send_channel = self.bot.get_channel(self.channel_id)
+                                    await send_channel.send(
+                                        f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
+                                        ephemeral=True,
                                     )
+
+                        if len(broken) > 3:
+
+                            if broken[0] == "Balance":
+                                self.balance = broken[-1]
+
+                                if self.balance:
+                                    embed = discord.Embed(
+                                        title=f"Balance Transcript",
+                                        description=f"### Account: {self.name}\n### Balance: {self.balance}",
+                                        color=discord.Color.green(),
+                                    )
+
+                                    send_channel = self.bot.get_channel(self.channel_id)
+                                    await send_channel.send(embed=embed)
+
+                                else:
 
                                     embed = discord.Embed(
-                                        title=f"Stock Sold Report",
-                                        description=f"Account: {self.name}\n\nStocks Sold : {self.quantity}\nTotal Price: {round(self.price)}\nBalance Left : {balance}",
-                                        color=discord.Color.red(),
+                                        title="Unable To Fetch Balance",
+                                        description=f"### Please Try Again Later",
+                                        color=discord.Color.green(),
                                     )
 
-                                self.conn.commit()
-                                send_channel = self.bot.get_channel(self.channel_id)
-                                await send_channel.send(embed=embed)
-                                self.reset_purchase_details()
-
-                            except Exception as e:
-                                send_channel = self.bot.get_channel(self.channel_id)
-                                await send_channel.send(
-                                    f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>",
-                                    ephemeral=True,
-                                )
-
-                    if len(broken) > 3:
-
-                        if broken[0] == "Balance":
-                            self.balance = broken[-1]
-
-                            if self.balance:
-                                embed = discord.Embed(
-                                    title=f"Balance Transcript",
-                                    description=f"### Account: {self.name}\n### Balance: {self.balance}",
-                                    color=discord.Color.green(),
-                                )
-
-                                send_channel = self.bot.get_channel(self.channel_id)
-                                await send_channel.send(embed=embed)
-
-                            else:
-                                
-                                embed = discord.Embed(
-                                    title="Unable To Fetch Balance",
-                                    description=f"### Please Try Again Later",
-                                    color=discord.Color.green(),
-                                )
-
-                                self.reset_purchase_details()
-                                send_channel = self.bot.get_channel(self.channel_id)
-                                await send_channel.send(embed=embed)
+                                    self.reset_purchase_details()
+                                    send_channel = self.bot.get_channel(self.channel_id)
+                                    await send_channel.send(embed=embed)
 
             except Exception as e:
-                pass
+                send_channel = self.bot.get_channel(self.channel_id)
+                await send_channel.send(
+                    f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>"
+                )
+
 
 class NewsPagination(discord.ui.View):
     def __init__(self, news_list):
