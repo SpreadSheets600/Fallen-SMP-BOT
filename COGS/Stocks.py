@@ -812,78 +812,63 @@ class Stocks(commands.Cog):
 
                         embed = discord.Embed(
                             title="Server Top Balances",
-                            description=f"Displaying Top Balances In The Server",
+                            description="Displaying Top Balances In The Server\nExcludes Balance From <@727012870683885578> ( SpreadSheets )",
                             color=discord.Color.green(),
                         )
 
                         broken = message.content.split("\n")
 
                         users = []
-
-                        server_total = 0
                         not_needed_bal = 0
-                        server_total_raw = (
-                            broken[3].split(" ")[-1].replace(",", "")[1:]
-                        )
+
+                        server_total_raw = broken[3].split(" ")[-1].replace(",", "")[1:]
+                        server_total = float(server_total_raw)
 
                         for i in range(4, len(broken) - 1):
-                            user = broken[i]
+                            user_line = broken[i]
+                            user_data = user_line.split(" ")
 
-                            if user.split(" ")[1] == "SpreadSheets,":
-                                bal_idc = (user.split(" ")[-1].replace(",", "")[1:])
-                                not_needed_bal += float(bal_idc)
+                            if user_data[1] == "SpreadSheets,":
+                                bal_idc = float(user_data[-1].replace(",", "")[1:])
+                                not_needed_bal += bal_idc
+                                continue
 
-                                server_total += float(server_total_raw) - not_needed_bal
-                                pass
-
-                            elif user.split(" ")[1] == "[":
-                                for us in user.split(" "):
-                                    print(us)
-
-                                users.append(user.split(" ")[4:])   
+                            if user_data[1] == "[":
+                                user_id = user_data[3].strip("~[]")
+                                user_balance = float(user_data[-1].replace(",", "")[1:])
                             else:
-                                users.append(user.split(" ")[1:])
+                                user_id = user_data[1].strip("~[]")
+                                user_balance = float(user_data[-1].replace(",", "")[1:])
 
-                        for user in users:
-                            user_id = user[0]
-                            print(user_id)
+                            users.append((user_id, user_balance))
 
-                            if user_id[0] == "~":
-                                user_id = user_id[1:]
+                        server_total -= not_needed_bal
 
-                            user_balance = user[-1]
+                        cursor = self.conn.cursor()
+                        cursor.execute("SELECT * FROM user_data")
+                        rows = cursor.fetchall()
 
-                            cursor = self.conn.cursor()
-                            cursor.execute(
-                                """
-                                SELECT * FROM user_data
-                                """
-                            )
-
-                            rows = cursor.fetchall()
-
+                        for user_id, user_balance in users:
                             discord_user_id = None
 
                             for row in rows:
-                                if row[2] == user_id:
+                                if row[3].lower() == user_id[0:len(user_id)-1].lower() or row[2].lower() == user_id[0:len(user_id)-1].lower():
                                     discord_user_id = row[1]
 
-                                    print(discord_user_id)
-
-                            if discord_user_id == None:
+                            if discord_user_id is None:
                                 embed.add_field(
-                                    name=f"{user_id}",
-                                    value=f"Balance: {user_balance}",
+                                    name=f"{user_id[0:len(user_id)-1]}",
+                                    value=f"Balance: ${user_balance:,}",
                                     inline=False,
                                 )
                             else:
                                 embed.add_field(
-                                    name=f"<@{discord_user_id}>",
-                                    value=f"User: {user_id}\nBalance: {user_balance}",
+                                    name=f"{user_id[0:len(user_id)-1]}",
+                                    value=f"User: <@{discord_user_id}>\nBalance: ${user_balance:,}",
                                     inline=False,
                                 )
 
-                        embed.set_footer(text=f"Server Total: ${round(server_total)}")
+                        embed.set_footer(text=f"Server Total: ${round(server_total):,}")
 
                         send_channel = self.bot.get_channel(self.channel_id)
                         await send_channel.send(embed=embed)
@@ -1008,9 +993,9 @@ class Stocks(commands.Cog):
                                     await send_channel.send(embed=embed)
 
             except Exception as e:
-                send_channel = self.bot.get_channel(self.channel_id)
-                await send_channel.send(
-                    f"```{str(e)}```\n```{traceback.print_exc()}```\nYou Should probably Report This To <@727012870683885578>"
+                user = self.bot.get_user(727012870683885578)
+                await user.send(
+                    f"Command Error `on_message`\n```{str(e)}```"
                 )
 
 
