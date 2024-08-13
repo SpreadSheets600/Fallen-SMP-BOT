@@ -203,7 +203,9 @@ class Whitelist(commands.Cog):
 
             await ctx.respond(
                 embed=embed,
-                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot, user=ctx.author),
+                view=WhitelistForm(
+                    interaction_user=ctx.user, bot=self.bot, user=ctx.author
+                ),
                 ephemeral=True,
             )
 
@@ -258,7 +260,30 @@ class WhitelistForm(discord.ui.View):
             return
 
         await interaction.response.send_modal(
-            WhitelistModal(title="Fallen SMP Whitelist Form", bot=self.bot, user=self.interaction_user)
+            WhitelistModal(
+                title="Fallen SMP Whitelist Form",
+                bot=self.bot,
+                user=self.interaction_user,
+            )
+        )
+
+
+class WhitelistQNA(discord.ui.View):
+    def __init__(self, interaction_user: discord.User, bot: commands.Bot, user) -> None:
+        super().__init__(timeout=None)
+        self.interaction_user = interaction_user
+        self.bot = bot
+
+        self.add_item(
+            discord.ui.InputText(
+                label="Where Is PVP Allowed ?", placeholder="Read The Guide For Answer"
+            )
+        )
+        self.add_item(
+            discord.ui.InputText(
+                label="What Roles Do You Get Killing A Player Unwilling ",
+                placeholder="Read The Guide For Answer",
+            )
         )
 
 
@@ -275,11 +300,6 @@ class WhitelistModal(discord.ui.Modal):
         )
         self.add_item(
             discord.ui.InputText(
-                label="Character Name", placeholder="Enter Your Server Character Name"
-            )
-        )
-        self.add_item(
-            discord.ui.InputText(
                 label="Character Gender", placeholder="Enter Your Character Gender"
             )
         )
@@ -290,23 +310,36 @@ class WhitelistModal(discord.ui.Modal):
                 style=discord.InputTextStyle.multiline,
             )
         )
+        self.add_item(
+            discord.ui.InputText(
+                label="Agree To Follow Your Character Backstory ?",
+                placeholder="Answer Yes or No",
+            )
+        )
+        self.add_item(
+            discord.ui.InputText(
+                label="Roles Earned by Killing Unwilling Player",
+                placeholder="Read The Guide For Answer",
+            )
+        )
 
     async def callback(self, interaction: discord.Interaction):
 
         conn = sqlite3.connect("User.db")
 
         try:
-            if len(self.children[3].value) > 3000:
+            agree_backstory = self.children[3].value.lower()
+            roles_answer = self.children[4].value.lower()
+            character_backstory = self.children[2].value
 
-                user = self.bot.get_user(interaction.user.id)
+            if agree_backstory != "yes":
                 embed = discord.Embed(
-                    title="Whitelist Form Not Sumbitted",
-                    description="### Character Backstory Too Long\nCharacter Backstory Should Be Below 3000 Characters",
+                    title="Whitelist Form Not Submitted",
+                    description="### Character Backstory Not Followed\nYou Must Agree To Follow Your Character Backstory",
                     color=discord.Color.red(),
                 )
 
-                await user.send(embed=embed)
-
+                await interaction.user.send(embed=embed)
                 await interaction.response.send_message(
                     f"<@{interaction.user.id}>",
                     embed=embed,
@@ -314,17 +347,44 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            if len(self.children[3].value) < 100:
-
-                user = self.bot.get_user(interaction.user.id)
+            elif roles_answer != "outlaw":
                 embed = discord.Embed(
-                    title="Whitelist Form Not Sumbitted",
+                    title="Whitelist Form Not Submitted",
+                    description="### Roles Not Correct\nYou Must Answer Correctly To The Question",
+                    color=discord.Color.red(),
+                )
+
+                await interaction.user.send(embed=embed)
+                await interaction.response.send_message(
+                    f"<@{interaction.user.id}>",
+                    embed=embed,
+                    ephemeral=True,
+                )
+                return
+
+            elif len(character_backstory) > 3000:
+                embed = discord.Embed(
+                    title="Whitelist Form Not Submitted",
+                    description="### Character Backstory Too Long\nCharacter Backstory Should Be Below 3000 Characters",
+                    color=discord.Color.red(),
+                )
+
+                await interaction.user.send(embed=embed)
+                await interaction.response.send_message(
+                    f"<@{interaction.user.id}>",
+                    embed=embed,
+                    ephemeral=True,
+                )
+                return
+
+            elif len(character_backstory) < 100:
+                embed = discord.Embed(
+                    title="Whitelist Form Not Submitted",
                     description="### Character Backstory Too Short\nCharacter Backstory Should Be Above 100 Characters",
                     color=discord.Color.red(),
                 )
 
-                await user.send(embed=embed)
-
+                await interaction.user.send(embed=embed)
                 await interaction.response.send_message(
                     f"<@{interaction.user.id}>",
                     embed=embed,
@@ -365,7 +425,7 @@ class WhitelistModal(discord.ui.Modal):
                         self.children[0].value,
                         self.children[1].value,
                         self.children[2].value,
-                        self.children[3].value,
+                        character_backstory,
                     ),
                 )
 
@@ -379,12 +439,15 @@ class WhitelistModal(discord.ui.Modal):
 
                 embed = discord.Embed(
                     title=f"Whitelist Application From {interaction.user.display_name}",
-                    description=f"Username : {self.children[0].value}\nCharacter Name : {self.children[1].value}\nCharacter Gender : {self.children[2].value}\n\nCharacter Backstory : {self.children[3].value}",
+                    description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\nRoles Earned By Killing Unwilling Player : {roles_answer}",
                     color=discord.Color.blue(),
                 )
 
                 logs_channel = self.bot.get_channel(logs_channel_id)
-                await logs_channel.send(f"<@727012870683885578> <@437622938242514945> <@243042987922292738> <@664157606587138048> <@896411007797325824>",embed=embed)
+                await logs_channel.send(
+                    f"<@727012870683885578> <@437622938242514945> <@243042987922292738> <@664157606587138048> <@896411007797325824>",
+                    embed=embed,
+                )
 
                 success_embed = discord.Embed(
                     title="Application Submitted",
@@ -392,15 +455,13 @@ class WhitelistModal(discord.ui.Modal):
                     color=discord.Color.green(),
                 )
 
-                user = self.bot.get_user(interaction.user.id)
-                await user.send(embed=success_embed)
-
+                await interaction.user.send(embed=success_embed)
                 await interaction.response.send_message(
                     embed=success_embed, ephemeral=True
                 )
 
         except Exception as e:
-            error_message = f"An error occurred: {str(e)}\n{traceback.format_exc()}"
+            error_message = f"An Error Occurred: {str(e)}\n{traceback.format_exc()}"
             error_channel = self.bot.get_channel(whitelist_channel_id)
             await error_channel.send(error_message)
 
