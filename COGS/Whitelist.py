@@ -95,9 +95,18 @@ class Whitelist(commands.Cog):
 
                 embed = discord.Embed(
                     title="Whitelist Added",
-                    description=f"Whitelist for **{member.display_name}** has been accepted.",
+                    description=f"Whitelist For **{member.display_name}** has been accepted.",
                     color=discord.Color.green(),
                 )
+
+                user_embed = discord.Embed(
+                    title="Whitelist Application Accepted",
+                    description=f"Your Whitelist Application Has Been Accepted. \n## Join Now : `play.fallensmp.xyz`",
+                    color=discord.Color.green(),
+                )
+
+                user = self.bot.get_user(member.id)
+                await user.send(embed=embed)
 
                 await ctx.respond(embed=embed)
             else:
