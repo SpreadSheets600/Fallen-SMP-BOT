@@ -5,10 +5,10 @@ import discord
 import datetime
 from discord.ext import commands
 
-HOST_NAME = "pre-01.gbnodes.host"
-USERNAME = "bl_8262.1ab56acd"
-PASSWORD = "i^g@z4g2bn9"
-PORT = 2222
+HOST_NAME = ""
+USERNAME = ""
+PASSWORD = ""
+PORT = 0000
 
 LOG_FILE_PATH = "/logs/latest.log"
 LOG_CHANNEL_ID = 1267512160540426390

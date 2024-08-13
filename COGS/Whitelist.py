@@ -194,7 +194,7 @@ class Whitelist(commands.Cog):
 
             await ctx.respond(
                 embed=embed,
-                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot,),
+                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot, user=ctx.author),
                 ephemeral=True,
             )
 
@@ -299,7 +299,8 @@ class WhitelistModal(discord.ui.Modal):
                 await user.send(embed=embed)
 
                 await interaction.response.send_message(
-                    "## Character Story Not Sumbitted\n### Character Backstory Too Long\nCharacter Backstory Below 3000 Characters Is Appreciated",
+                    f"<@{interaction.user.id}",
+                    embed=embed,
                     ephemeral=True,
                 )
                 return
@@ -316,7 +317,8 @@ class WhitelistModal(discord.ui.Modal):
                 await user.send(embed=embed)
 
                 await interaction.response.send_message(
-                    "Character Backstory Above 100 Characters Is Appreciated",
+                    f"<@{interaction.user.id}",
+                    embed=embed,
                     ephemeral=True,
                 )
                 return
