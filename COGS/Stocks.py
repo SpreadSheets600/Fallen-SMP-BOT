@@ -993,10 +993,7 @@ class Stocks(commands.Cog):
                                     await send_channel.send(embed=embed)
 
             except Exception as e:
-                user = self.bot.get_user(727012870683885578)
-                await user.send(
-                    f"Command Error `on_message`\n```{str(e)}```"
-                )
+                pass
 
 
 class NewsPagination(discord.ui.View):

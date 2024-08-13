@@ -497,4 +497,4 @@ bot.load_extension("COGS.Help")
 bot.load_extension("COGS.Stocks")
 bot.load_extension("COGS.Whitelist")
 
-bot.run("MTI2MTM1MzUzNjIwNjI3NDY3Mg.Gai1yv.bD74si_KHXBhadyznPq4JN0WYJPUlV_JRe6-q0")
+bot.run("BOT TOKEN")

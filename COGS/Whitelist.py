@@ -194,7 +194,7 @@ class Whitelist(commands.Cog):
 
             await ctx.respond(
                 embed=embed,
-                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot),
+                view=WhitelistForm(interaction_user=ctx.user, bot=self.bot,),
                 ephemeral=True,
             )
 
@@ -233,7 +233,7 @@ class WhitelistView(discord.ui.View):
 
 
 class WhitelistForm(discord.ui.View):
-    def __init__(self, interaction_user: discord.User, bot: commands.Bot) -> None:
+    def __init__(self, interaction_user: discord.User, bot: commands.Bot, user) -> None:
         super().__init__(timeout=None)
         self.interaction_user = interaction_user
         self.bot = bot
@@ -249,14 +249,15 @@ class WhitelistForm(discord.ui.View):
             return
 
         await interaction.response.send_modal(
-            WhitelistModal(title="Fallen SMP Whitelist Form", bot=self.bot)
+            WhitelistModal(title="Fallen SMP Whitelist Form", bot=self.bot, user=self.interaction_user)
         )
 
 
 class WhitelistModal(discord.ui.Modal):
-    def __init__(self, bot, *args, **kwargs) -> None:
+    def __init__(self, bot, user, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.bot = bot
+        self.user = user
 
         self.add_item(
             discord.ui.InputText(
@@ -287,13 +288,33 @@ class WhitelistModal(discord.ui.Modal):
 
         try:
             if len(self.children[3].value) > 3000:
+
+                user = self.bot.get_user(interaction.user.id)
+                embed = discord.Embed(
+                    title="Whitelist Form Not Sumbitted",
+                    description="### Character Backstory Too Long\nCharacter Backstory Should Be Below 3000 Characters",
+                    color=discord.Color.red(),
+                )
+
+                await user.send(embed=embed)
+
                 await interaction.response.send_message(
-                    "Character Backstory Below 3000 Characters Is Appreciated",
+                    "## Character Story Not Sumbitted\n### Character Backstory Too Long\nCharacter Backstory Below 3000 Characters Is Appreciated",
                     ephemeral=True,
                 )
                 return
 
             if len(self.children[3].value) < 100:
+
+                user = self.bot.get_user(interaction.user.id)
+                embed = discord.Embed(
+                    title="Whitelist Form Not Sumbitted",
+                    description="### Character Backstory Too Short\nCharacter Backstory Should Be Above 100 Characters",
+                    color=discord.Color.red(),
+                )
+
+                await user.send(embed=embed)
+
                 await interaction.response.send_message(
                     "Character Backstory Above 100 Characters Is Appreciated",
                     ephemeral=True,
