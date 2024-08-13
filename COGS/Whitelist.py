@@ -299,7 +299,7 @@ class WhitelistModal(discord.ui.Modal):
                 await user.send(embed=embed)
 
                 await interaction.response.send_message(
-                    f"<@{interaction.user.id}",
+                    f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
                 )
@@ -317,7 +317,7 @@ class WhitelistModal(discord.ui.Modal):
                 await user.send(embed=embed)
 
                 await interaction.response.send_message(
-                    f"<@{interaction.user.id}",
+                    f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
                 )
