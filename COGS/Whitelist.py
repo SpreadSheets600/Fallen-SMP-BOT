@@ -106,7 +106,7 @@ class Whitelist(commands.Cog):
                 )
 
                 user = self.bot.get_user(member.id)
-                await user.send(embed=embed)
+                await user.send(embed=user_embed)
 
                 await ctx.respond(embed=embed)
             else:
