@@ -383,6 +383,9 @@ class WhitelistModal(discord.ui.Modal):
                     color=discord.Color.green(),
                 )
 
+                user = self.bot.get_user(interaction.user.id)
+                await user.send(embed=success_embed)
+
                 await interaction.response.send_message(
                     embed=success_embed, ephemeral=True
                 )
