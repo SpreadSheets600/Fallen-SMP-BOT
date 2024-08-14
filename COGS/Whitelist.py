@@ -1,3 +1,4 @@
+import random
 import discord
 import sqlite3
 import traceback
@@ -268,30 +269,21 @@ class WhitelistForm(discord.ui.View):
         )
 
 
-class WhitelistQNA(discord.ui.View):
-    def __init__(self, interaction_user: discord.User, bot: commands.Bot, user) -> None:
-        super().__init__(timeout=None)
-        self.interaction_user = interaction_user
-        self.bot = bot
-
-        self.add_item(
-            discord.ui.InputText(
-                label="Where Is PVP Allowed ?", placeholder="Read The Guide For Answer"
-            )
-        )
-        self.add_item(
-            discord.ui.InputText(
-                label="What Roles Do You Get Killing A Player Unwilling ",
-                placeholder="Read The Guide For Answer",
-            )
-        )
-
-
 class WhitelistModal(discord.ui.Modal):
     def __init__(self, bot, user, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.bot = bot
         self.user = user
+
+        self.qna = {
+            "Role Earned by Killing Player Unwilling": "outlaw",
+            "Where Is PVP Allowed": "pvp arena",
+            "Can I Build Without Permission": "no",
+            "Whom To Ask Permission From Before Building": ["duke", "admin"],
+            "Who Has The Ultimate Authority": "emperor",
+        }
+
+        self.ques = random.choice(list(self.qna.keys()))
 
         self.add_item(
             discord.ui.InputText(
@@ -318,12 +310,20 @@ class WhitelistModal(discord.ui.Modal):
         )
         self.add_item(
             discord.ui.InputText(
-                label="Roles Earned by Killing Unwilling Player",
+                label=self.ques,
                 placeholder="Read The Guide For Answer",
             )
         )
 
     async def callback(self, interaction: discord.Interaction):
+
+        qna = {
+            "Role Earned by Killing Player Unwilling": "Outlaw",
+            "Where Is PVP Allowed": "PVP Arena",
+            "Can I Build Without Permission": "No",
+            "Whom To Ask Permission From Before Building": ["Duke", "Admin"],
+            "Who Has The Ultimate Authority": "Emperor",
+        }
 
         conn = sqlite3.connect("User.db")
 
@@ -347,10 +347,12 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            elif roles_answer != "outlaw":
+            correct_answer = self.qna[self.ques]
+
+            if roles_answer not in correct_answer:
                 embed = discord.Embed(
                     title="Whitelist Form Not Submitted",
-                    description="### Roles Not Correct\nYou Must Answer Correctly To The Question",
+                    description="### Answer Not Correct\nYou Must Answer Correctly To The Question",
                     color=discord.Color.red(),
                 )
 
@@ -447,6 +449,11 @@ class WhitelistModal(discord.ui.Modal):
                 await logs_channel.send(
                     f"<@727012870683885578> <@437622938242514945> <@243042987922292738> <@664157606587138048> <@896411007797325824>",
                     embed=embed,
+                )
+
+                game_channel = self.bot.get_channel(1264430288247848992)
+                await game_channel.send(
+                    f"Admins In The Game - New Whitelist Application Just Arrived"
                 )
 
                 success_embed = discord.Embed(
