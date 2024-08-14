@@ -383,7 +383,6 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
     if member == None:
         member = ctx.author
 
-
     conn = sqlite3.connect("User.db")
     cursor = conn.cursor()
 
@@ -407,7 +406,12 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
         )
         embed.add_field(name="Minecraft Username", value=row[2], inline=False)
 
-        embed.set_thumbnail(url=member.avatar.url)
+        try:
+            avatar = member.avatar.url
+            embed.set_thumbnail(url=member.avatar.url)
+        except Exception as e:
+            pass
+
         embed.set_footer(text=f"Fallen SMP | Joined On {row[6]}")
 
         await ctx.respond(
@@ -448,11 +452,15 @@ class View_Character_Info(discord.ui.View):
                 color=discord.Color.green(),
             )
 
-            embed.add_field(name="Character Name", value=row[3], inline=True)
             embed.add_field(name="Character Gender", value=row[4], inline=True)
             embed.add_field(name="Character Backstory", value=row[5], inline=False)
 
-            embed.set_thumbnail(url=self.user.avatar.url)
+            try:
+                avatar = self.user.avatar.url
+                embed.set_thumbnail(url=self.user.avatar.url)
+            except Exception as e:
+                pass
+            
             embed.set_footer(text=f"Fallen SMP | Joined on {row[6]}")
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -548,6 +556,5 @@ class BoundView(discord.ui.View):
 bot.load_extension("COGS.Help")
 bot.load_extension("COGS.Stocks")
 bot.load_extension("COGS.Whitelist")
-
 
 bot.run("BOT TOKEN")

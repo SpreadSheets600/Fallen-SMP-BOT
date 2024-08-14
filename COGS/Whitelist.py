@@ -66,6 +66,11 @@ class Whitelist(commands.Cog):
                 "You don't have permission to use this command.", ephemeral=True
             )
 
+    @whitelist.command  (name="help", description="Get Video Help For Whitelisting")
+    async def help_whitelist(self, ctx: discord.ApplicationContext):
+
+        await ctx.respond("https://cdn.discordapp.com/attachments/1195302501797343243/1273306886728585420/Whitelist.mp4?ex=66be22f2&is=66bcd172&hm=da9c1be57bef3638a6f7720b5bd4883ccf208017fe839f0f04d2affabdc4f60f&")
+
     @whitelist.command(name="add", description="Add User To Whitelist")
     @option(
         "type",
@@ -425,8 +430,8 @@ class WhitelistModal(discord.ui.Modal):
                     (
                         str(interaction.user.id),
                         self.children[0].value,
+                        self.children[0].value,
                         self.children[1].value,
-                        self.children[2].value,
                         character_backstory,
                     ),
                 )
@@ -441,7 +446,7 @@ class WhitelistModal(discord.ui.Modal):
 
                 embed = discord.Embed(
                     title=f"Whitelist Application From {interaction.user.display_name}",
-                    description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\nRoles Earned By Killing Unwilling Player : {roles_answer}",
+                    description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\n{self.ques} : {roles_answer}",
                     color=discord.Color.blue(),
                 )
 
@@ -451,9 +456,9 @@ class WhitelistModal(discord.ui.Modal):
                     embed=embed,
                 )
 
-                game_channel = self.bot.get_channel(1264430288247848992)
-                await game_channel.send(
-                    f"Admins In The Game - New Whitelist Application Just Arrived"
+                console_channel = self.bot.get_channel(console_channel_id)
+                await console_channel.send(
+                    f"msg rudropro Admins In The Game - New Whitelist Application Just Arrived"
                 )
 
                 success_embed = discord.Embed(
