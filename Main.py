@@ -428,6 +428,77 @@ async def playerinfo(ctx: discord.ApplicationContext, member: discord.Member = N
     conn.close()
 
 
+@bot.event
+async def on_message(message):
+
+    if message.author.id == 1270267545806573619:
+
+        if message.channel.id == 1264430288247848992:
+            if message.content.startswith(":skull:"):
+                msg = message.content.split(" ")
+
+                killer = msg[-1]
+
+                if killer[0] == "+":
+                    killer = killer[1:].replace("_", " ")
+                    print(killer)
+
+                killed = msg[4]
+                print(killed)
+
+                if killed[0] == "+":
+                    killed = killed[1:].replace("_", " ")
+                    print(killed)
+
+                if killer.lower() in ["skeleton", "zombie", "spider", "enderman", "husk", "creeper", "phantom"]:
+                    return
+                
+                else:
+                    con = sqlite3.connect("User.db")
+                    cur = con.cursor()
+
+                    cur.execute(
+                        "SELECT * FROM user_data WHERE minecraft_username = ?", (killer,)
+                    )
+                    killer_row = cur.fetchone()
+                    print(killed_row)
+
+                    cur.execute(
+                        "SELECT * FROM user_data WHERE minecraft_username = ?", (killed,)
+                    )
+                    killed_row = cur.fetchone()
+                    print(killed_row)
+
+                    if killer_row and killed_row:
+                        killer_id = killer_row[1]
+                        killed_id = killed_row[1]
+
+                        print(killer_id, killed_id)
+
+                        embed = discord.Embed(
+                            title=":skull: Player Death",
+                            description=f"**{killer}** Killed **{killed}**",
+                            color=discord.Color.red(),
+                        )
+
+                        embed.add_field(name="Killer", value=f"<@{killer_id}>", inline=True)
+                        embed.add_field(name="Killed", value=f"<@{killed_id}>", inline=True)
+
+                        await bot.get_channel(1267512076222595122).send(embed=embed)
+
+                    else:
+                        embed = discord.Embed(
+                            title=":skull: Player Death",
+                            description=f"**{killer}** Killed **{killed}**",
+                            color=discord.Color.red(),
+                        )
+
+                        embed.add_field(name="Killer", value=killer, inline=True)
+                        embed.add_field(name="Killed", value=killed, inline=True)
+
+                        await bot.get_channel(1267512076222595122).send(embed=embed)
+                    
+
 class View_Character_Info(discord.ui.View):
     def __init__(self, user_id, user) -> None:
         super().__init__(timeout=None)
