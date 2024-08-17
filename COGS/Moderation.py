@@ -150,6 +150,86 @@ class Moderation(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @commands.slash_command(name="clear", description="Clears Messages Of A User")
+    async def clear_messages(self, ctx, member: discord.Member, limit: int = 5):
+        if ctx.author.id not in ADMINS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await ctx.channel.purge(
+            limit=limit, check=lambda msg: msg.author == member, bulk=True
+        )
+
+        embed = self.create_embed(
+            title="Messages Cleared",
+            description=f"{limit} Messages Of {member.mention} Have Been Cleared",
+        )
+        await ctx.send(embed=embed, delete_after=5)
+
+    @commands.slash_command(name="purge", description="Clears Messages In A Channel")
+    async def purge_messages(self, ctx, limit: int = 5):
+        if ctx.author.id not in ADMINS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await ctx.channel.purge(limit=limit, bulk=True)
+
+        embed = self.create_embed(
+            title="Messages Cleared",
+            description=f"{limit} Messages Have Been Cleared",
+        )
+        await ctx.send(embed=embed, delete_after=5)
+
+    @commands.slash_command(name="kick", description="Kicks A User")
+    async def kick_user(
+        self, ctx, member: discord.Member, *, reason: str = "No Reason Provided"
+    ):
+        if ctx.author.id not in ADMINS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await member.kick(reason=reason)
+        embed = self.create_embed(
+            title="Kicked",
+            description=f"{member.mention} Has Been Kicked\n### Reason: {reason}",
+        )
+        await ctx.send(embed=embed)
+
+    @commands.slash_command(name="ban", description="Bans A User")
+    async def ban_user(
+        self, ctx, member: discord.Member, *, reason: str = "No Reason Provided"
+    ):
+        if ctx.author.id not in ADMINS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await member.ban(reason=reason)
+        embed = self.create_embed(
+            title="Banned",
+            description=f"{member.mention} Has Been Banned\n### Reason: {reason}",
+        )
+        await ctx.send(embed=embed)
+
+    @commands.slash_command(name="unban", description="Unbans A User")
+    async def unban_user(
+        self, ctx, member: discord.Member, *, reason: str = "No Reason Provided"
+    ):
+        if ctx.author.id not in ADMINS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await member.unban(reason=reason)
+        embed = self.create_embed(
+            title="Unbanned",
+            description=f"{member.mention} Has Been Unbanned\n### Reason: {reason}",
+        )
+        await ctx.send(embed=embed)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user or message.author.id in ADMINS:
@@ -160,6 +240,38 @@ class Moderation(commands.Cog):
 
         if message.id in self.replied_messages:
             return
+
+        if (
+            "<@1261353536206274672>" in message.content
+            or "<@!1261353536206274672>" in message.content
+        ):
+
+            embed = discord.Embed(
+                title=":information_source: Application Info",
+                description="Minecraft utility Bot\nMainly For Fallen SMP",
+                color=0x2F3136,
+            )
+
+            embed.add_field(
+                name="Links",
+                value=":link: [ Terms ](https://spreadsheets600.me)\n:link: [ GitHub ](https://spreadsheets600.me)",
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Developer",
+                value=":gear: `SpreeadSheets600`",
+                inline=False,
+            )
+
+            embed.add_field(
+                name="Created At",
+                value=f":calendar: `{self.bot.user.created_at.strftime('%Y-%m-%d %H:%M:%S')}`",
+                inline=True,
+            )
+
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+            return await message.channel.send(embed=embed)
 
         try:
             for pattern in self.whitelist_already_patterns:
