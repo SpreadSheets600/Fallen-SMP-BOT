@@ -22,6 +22,7 @@ class Moderation(commands.Cog):
             re.compile(r"\bwhitelist\s?me\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?kardo\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?please\b", re.IGNORECASE),
+            re.compile(r"\bwhitelist\s?kar\s?do\b", re.IGNORECASE)
         ]
 
         self.server_ip_pattern = re.compile(
