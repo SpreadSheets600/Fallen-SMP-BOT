@@ -44,9 +44,6 @@ class Moderation(commands.Cog):
         )
         self.conn.commit()
 
-    def cog_unload(self):
-        self.conn.close()
-
     def get_warnings(self, user_id):
         self.cursor.execute("SELECT count FROM warnings WHERE user_id = ?", (user_id,))
         result = self.cursor.fetchone()
@@ -72,7 +69,6 @@ class Moderation(commands.Cog):
     )
 
     @Warning.command(name="give", description="Warns A User")
-    @commands.has_permissions(manage_messages=True)
     async def warn(self, ctx, member: discord.Member):
 
         warnings = self.add_warning(member.id)
@@ -120,7 +116,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="warnings", description="Shows Warnings Of A User")
+    @commands.slash_command(name="warnings", description="Shows Warnings Of A User")
     async def show_warnings(self, ctx, member: discord.Member):
         warnings = self.get_warnings(member.id)
         embed = self.create_embed(
@@ -280,3 +276,4 @@ class Moderation(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Moderation(bot))
+

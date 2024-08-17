@@ -450,21 +450,31 @@ async def on_message(message):
                     killed = killed[1:].replace("_", " ")
                     print(killed)
 
-                if killer.lower() in ["skeleton", "zombie", "spider", "enderman", "husk", "creeper", "phantom"]:
+                if killer.lower() in [
+                    "skeleton",
+                    "zombie",
+                    "spider",
+                    "enderman",
+                    "husk",
+                    "creeper",
+                    "phantom",
+                ]:
                     return
-                
+
                 else:
                     con = sqlite3.connect("User.db")
                     cur = con.cursor()
 
                     cur.execute(
-                        "SELECT * FROM user_data WHERE minecraft_username = ?", (killer,)
+                        "SELECT * FROM user_data WHERE minecraft_username = ?",
+                        (killer,),
                     )
                     killer_row = cur.fetchone()
                     print(killed_row)
 
                     cur.execute(
-                        "SELECT * FROM user_data WHERE minecraft_username = ?", (killed,)
+                        "SELECT * FROM user_data WHERE minecraft_username = ?",
+                        (killed,),
                     )
                     killed_row = cur.fetchone()
                     print(killed_row)
@@ -481,8 +491,12 @@ async def on_message(message):
                             color=discord.Color.red(),
                         )
 
-                        embed.add_field(name="Killer", value=f"<@{killer_id}>", inline=True)
-                        embed.add_field(name="Killed", value=f"<@{killed_id}>", inline=True)
+                        embed.add_field(
+                            name="Killer", value=f"<@{killer_id}>", inline=True
+                        )
+                        embed.add_field(
+                            name="Killed", value=f"<@{killed_id}>", inline=True
+                        )
 
                         await bot.get_channel(1267512076222595122).send(embed=embed)
 
@@ -497,7 +511,7 @@ async def on_message(message):
                         embed.add_field(name="Killed", value=killed, inline=True)
 
                         await bot.get_channel(1267512076222595122).send(embed=embed)
-                    
+
 
 class View_Character_Info(discord.ui.View):
     def __init__(self, user_id, user) -> None:
@@ -531,7 +545,7 @@ class View_Character_Info(discord.ui.View):
                 embed.set_thumbnail(url=self.user.avatar.url)
             except Exception as e:
                 pass
-            
+
             embed.set_footer(text=f"Fallen SMP | Joined on {row[6]}")
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
