@@ -235,7 +235,7 @@ class Moderation(commands.Cog):
         if message.author == self.bot.user or message.author.id in ADMINS:
             return
 
-        if message.channel.id == 1263898954999922720:
+        if message.channel.id == 1263898954999922720 or message.channel.id == 1273079560295940177 or message.channel.id == 1264430288247848992:
             return
 
         if message.id in self.replied_messages:

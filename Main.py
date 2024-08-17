@@ -441,14 +441,11 @@ async def on_message(message):
 
                 if killer[0] == "+":
                     killer = killer[1:].replace("_", " ")
-                    print(killer)
 
                 killed = msg[4]
-                print(killed)
 
                 if killed[0] == "+":
                     killed = killed[1:].replace("_", " ")
-                    print(killed)
 
                 if killer.lower() in [
                     "skeleton",
@@ -458,6 +455,15 @@ async def on_message(message):
                     "husk",
                     "creeper",
                     "phantom",
+                    "witch",
+                    "vindicator",
+                    "vex",
+                    "stray",
+                    "drowned",
+                    "blaze",
+                    "ghast",
+                    "cube",
+                    "slime",
                 ]:
                     return
 
@@ -481,34 +487,27 @@ async def on_message(message):
                         killer_id = killer_row[1]
                         killed_id = killed_row[1]
 
-                        print(killer_id, killed_id)
+                    embed = discord.Embed(
+                        title=":skull: Player Death",
+                        description=f"**{killer}** Killed **{killed}**",
+                        color=discord.Color.red(),
+                    )
 
-                        embed = discord.Embed(
-                            title=":skull: Player Death",
-                            description=f"**{killer}** Killed **{killed}**",
-                            color=discord.Color.red(),
-                        )
-
+                    if killer_row:
                         embed.add_field(
                             name="Killer", value=f"<@{killer_id}>", inline=True
                         )
+
+                    embed.add_field(name="Killer", value=f"{killer}>", inline=True)
+
+                    if killed_row:
                         embed.add_field(
                             name="Killed", value=f"<@{killed_id}>", inline=True
                         )
 
-                        await bot.get_channel(1267512076222595122).send(embed=embed)
+                    embed.add_field(name="Killed", value=f"{killed}", inline=True)
 
-                    else:
-                        embed = discord.Embed(
-                            title=":skull: Player Death",
-                            description=f"**{killer}** Killed **{killed}**",
-                            color=discord.Color.red(),
-                        )
-
-                        embed.add_field(name="Killer", value=killer, inline=True)
-                        embed.add_field(name="Killed", value=killed, inline=True)
-
-                        await bot.get_channel(1267512076222595122).send(embed=embed)
+                    await bot.get_channel(1274363177215463445).send(embed=embed)
 
 
 class View_Character_Info(discord.ui.View):
