@@ -493,19 +493,19 @@ async def on_message(message):
                         color=discord.Color.red(),
                     )
 
-                    if killer_row:
+                    if killer_id:
                         embed.add_field(
                             name="Killer", value=f"<@{killer_id}>", inline=True
                         )
+                    else:
+                        embed.add_field(name="Killer", value=f"{killer}>", inline=True)
 
-                    embed.add_field(name="Killer", value=f"{killer}>", inline=True)
-
-                    if killed_row:
+                    if killed_id:
                         embed.add_field(
                             name="Killed", value=f"<@{killed_id}>", inline=True
                         )
-
-                    embed.add_field(name="Killed", value=f"{killed}", inline=True)
+                    else:
+                        embed.add_field(name="Killed", value=f"{killed}", inline=True)
 
                     await bot.get_channel(1274363177215463445).send(embed=embed)
 
