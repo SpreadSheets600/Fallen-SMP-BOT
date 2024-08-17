@@ -627,5 +627,6 @@ class BoundView(discord.ui.View):
 bot.load_extension("COGS.Help")
 bot.load_extension("COGS.Stocks")
 bot.load_extension("COGS.Whitelist")
+bot.load_extension("COGS.Moderation")
 
 bot.run("BOT TOKEN")
