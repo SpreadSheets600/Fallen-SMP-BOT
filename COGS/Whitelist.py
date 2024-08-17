@@ -124,7 +124,7 @@ class Whitelist(commands.Cog):
                 await ctx.respond(embed=embed)
         else:
             await ctx.respond(
-                "You don't have permission to use this command.", ephemeral=True
+                "You Don't Have Permission To Use This Command", ephemeral=True
             )
 
     @whitelist.command(name="view", description="Show All Whitelisted Members")
