@@ -470,14 +470,12 @@ async def on_message(message):
                         (killer,),
                     )
                     killer_row = cur.fetchone()
-                    print(killed_row)
 
                     cur.execute(
                         "SELECT * FROM user_data WHERE minecraft_username = ?",
                         (killed,),
                     )
                     killed_row = cur.fetchone()
-                    print(killed_row)
 
                     if killer_row and killed_row:
                         killer_id = killer_row[1]

@@ -18,6 +18,8 @@ whitelist_channel_id = 1267512076222595122
 console_channel_id = 1263898954999922720
 logs_channel_id = 1267512076222595122
 
+Whitelist_ids = {}
+
 
 class Whitelist(commands.Cog):
     def __init__(self, bot):
@@ -47,6 +49,16 @@ class Whitelist(commands.Cog):
                 )
                 conn.commit()
 
+                if Whitelist_ids[member.id] != None:
+
+                    message_id = Whitelist_ids[member.id]
+                    channel = self.bot.get_channel(logs_channel_id)
+                    message = await channel.fetch_message(message_id)
+
+                    await message.delete()
+
+                    del Whitelist_ids[member.id]
+
                 embed = discord.Embed(
                     title="Whitelist Application Deleted",
                     description=f"Whitelist Application For **{member.display_name}** Has Been Deleted.",
@@ -66,10 +78,12 @@ class Whitelist(commands.Cog):
                 "You don't have permission to use this command.", ephemeral=True
             )
 
-    @whitelist.command  (name="help", description="Get Video Help For Whitelisting")
+    @whitelist.command(name="help", description="Get Video Help For Whitelisting")
     async def help_whitelist(self, ctx: discord.ApplicationContext):
 
-        await ctx.respond("https://cdn.discordapp.com/attachments/1195302501797343243/1273306886728585420/Whitelist.mp4?ex=66be22f2&is=66bcd172&hm=da9c1be57bef3638a6f7720b5bd4883ccf208017fe839f0f04d2affabdc4f60f&")
+        await ctx.respond(
+            "https://cdn.discordapp.com/attachments/1195302501797343243/1273306886728585420/Whitelist.mp4?ex=66be22f2&is=66bcd172&hm=da9c1be57bef3638a6f7720b5bd4883ccf208017fe839f0f04d2affabdc4f60f&"
+        )
 
     @whitelist.command(name="add", description="Add User To Whitelist")
     @option(
@@ -113,6 +127,14 @@ class Whitelist(commands.Cog):
 
                 user = self.bot.get_user(member.id)
                 await user.send(embed=user_embed)
+
+                if Whitelist_ids[member.id] != None:
+
+                    message_id = Whitelist_ids[member.id]
+                    channel = self.bot.get_channel(logs_channel_id)
+                    message = await channel.fetch_message(message_id)
+
+                    await message.add_reaction("✅")
 
                 await ctx.respond(embed=embed)
             else:
@@ -280,6 +302,7 @@ class WhitelistModal(discord.ui.Modal):
         self.bot = bot
         self.user = user
 
+        self.whitelist_ids = Whitelist_ids
         self.qna = {
             "Role Earned by Killing Player Unwilling": "outlaw",
             "Where Is PVP Allowed": "pvp arena",
@@ -451,10 +474,12 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 logs_channel = self.bot.get_channel(logs_channel_id)
-                await logs_channel.send(
+                msg = await logs_channel.send(
                     f"<@727012870683885578> <@437622938242514945> <@243042987922292738> <@664157606587138048> <@896411007797325824>",
                     embed=embed,
                 )
+
+                self.whitelist_ids[interaction.user.id] = msg.id
 
                 console_channel = self.bot.get_channel(console_channel_id)
                 await console_channel.send(
