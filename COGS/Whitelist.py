@@ -354,7 +354,7 @@ class WhitelistModal(discord.ui.Modal):
         self.add_item(
             discord.ui.InputText(
                 label=self.ques,
-                placeholder="Read The Guide For Answer",
+                placeholder="Read The Rules / Guide For Answer",
             )
         )
 

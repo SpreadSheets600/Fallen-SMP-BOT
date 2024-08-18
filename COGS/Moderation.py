@@ -43,6 +43,14 @@ class Moderation(commands.Cog):
             ),
         ]
 
+        self.witelist_answer_patterns = [
+            re.compile(r"\banswer\s?wrong\b", re.IGNORECASE),
+            re.compile(r"\banswer\s?kaya\s?hai\b", re.IGNORECASE),
+            re.compile(r"\banswer\s?kaya\s?hoga\b", re.IGNORECASE),
+            re.compile(r"(?=.*\banswer\b)(?=.*\bwrong\b)", re.IGNORECASE),
+            re.compile(r"(?=.*\banswer\b)(?=.*\bgalat\b)", re.IGNORECASE),
+        ]
+
         self.whitelist_already_patterns = [
             re.compile(r"\bwhitelist\s?already\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?ho\s?gaya\b", re.IGNORECASE),
@@ -293,6 +301,30 @@ class Moderation(commands.Cog):
             return await message.channel.send(embed=embed)
 
         try:
+            for pattern in self.witelist_answer_patterns:
+                if pattern.search(message.content):
+
+                    user = message.author
+
+                    try:
+
+                        guide = self.bot.get_application_command("guide")
+                        rules = self.bot.get_application_command("rules")
+
+                        await user.send(
+                            f"{user.mention}, Please Read The Rules Or Guide\nYou Can Use {guide.mention} Or {rules.mention} Commands To Get More Information"
+                        )
+
+                    except discord.Forbidden:
+                        pass
+
+                    await message.channel.send(
+                        f"{user.mention}, Please Read The Rules Or Guide\nYou Can Use {guide.mention} Or {rules.mention} To Get More Information"
+                    )
+
+                    self.replied_messages.add(message.id)
+                    return
+
             for pattern in self.whitelist_already_patterns:
                 if pattern.search(message.content):
 
