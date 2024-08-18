@@ -279,30 +279,43 @@ class WhitelistForm(discord.ui.View):
         self.interaction_user = interaction_user
         self.bot = bot
 
-    @discord.ui.button(label="Whitelist Form")
-    async def button_callback(
-        self, button: discord.ui.Button, interaction: discord.Interaction
-    ) -> None:
-        if interaction.user != self.interaction_user:
-            await interaction.response.send_message(
-                "You don't have permission to use this button.", ephemeral=True
-            )
-            return
+    @discord.ui.button(label="Java Whitelist", style=discord.ButtonStyle.secondary)
+    async def java_button_callback(self, button, interaction):
 
-        await interaction.response.send_modal(
-            WhitelistModal(
-                title="Fallen SMP Whitelist Form",
-                bot=self.bot,
-                user=self.interaction_user,
+        if interaction.user == self.interaction_user:
+            await interaction.response.send_modal(
+                WhitelistModal(
+                    title="Fallen SMP Whitelist Form",
+                    bot=self.bot,
+                    user=self.interaction_user,
+                    client="Java",
+                )
             )
-        )
+
+        self.disable_all_items()
+
+    @discord.ui.button(label="Bedrock Whitelist", style=discord.ButtonStyle.secondary)
+    async def bedrock_button_callback(self, button, interaction):
+
+        if interaction.user == self.interaction_user:
+            await interaction.response.send_modal(
+                WhitelistModal(
+                    title="Fallen SMP Whitelist Form",
+                    bot=self.bot,
+                    user=self.interaction_user,
+                    client="Bedrock / PE",
+                )
+            )
+
+        self.disable_all_items()
 
 
 class WhitelistModal(discord.ui.Modal):
-    def __init__(self, bot, user, *args, **kwargs) -> None:
+    def __init__(self, bot, user, client, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.bot = bot
         self.user = user
+        self.client = client
 
         self.whitelist_ids = Whitelist_ids
         self.qna = {
@@ -470,8 +483,8 @@ class WhitelistModal(discord.ui.Modal):
                 print("Application Submitted")
 
                 embed = discord.Embed(
-                    title=f"Whitelist Application From {interaction.user.display_name}",
-                    description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\n{self.ques} : {roles_answer}",
+                    title=f"Whitelist Application From {interaction.user.display_name}({interaction.user.id})",
+                    description=f"**Client** : {self.client}\nUsername : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\n{self.ques} : {roles_answer}",
                     color=discord.Color.blue(),
                 )
 

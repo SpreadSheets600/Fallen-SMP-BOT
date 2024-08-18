@@ -174,6 +174,10 @@ class Guide_Menu(discord.ui.View):
                 label="How To Get Whitelisted",
                 description="Learn about Whitelisting Process",
             ),
+            discord.SelectOption(
+                label="How To Write A Backstory",
+                description="Learn about Writing Character Backstory",
+            ),
         ],
     )
     async def select_callback(self, select, interaction):
@@ -235,6 +239,87 @@ To get whitelisted, follow these steps:
             )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif select.values[0] == "How To Write A Backstory":
+            embed = discord.Embed(
+                title="Guide to Creating a Backstory for Your Character",
+                description=(
+                    "A backstory is like a character's secret life. It's all the stuff that happened before the story starts. "
+                    "It helps shape who they are and why they do the things they do.\n\n"
+                    "Here's how to create one:"
+                ),
+                color=discord.Color.blue(),
+            )
+
+            embed.add_field(
+                name="**Who are they?**",
+                value=(
+                    " - What's their name, age, and where are they from?\n"
+                    " - What do they look like?\n"
+                    " - What's their personality like? Are they shy, brave, funny, or something else?"
+                ),
+                inline=False,
+            )
+
+            embed.add_field(
+                name="**What's their story?**",
+                value=(
+                    " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
+                    " - What are their dreams and goals?\n"
+                    " - What are they afraid of?"
+                ),
+                inline=False,
+            )
+
+            embed.add_field(
+                name="**How do they act?**",
+                value=(
+                    " - Their past shapes how they behave.\n"
+                    " - Did a bad experience make them mistrustful?\n"
+                    " - Did a happy childhood make them optimistic?"
+                ),
+                inline=False,
+            )
+
+            await interaction.response.send_message(
+                embed=embed, view=BackstoryExample(), ephemeral=True
+            )
+
+
+class BackstoryExample(discord.ui.View):
+    def __init__(
+        self,
+        timeout: float | None = 180,
+        disable_on_timeout: bool = False,
+    ):
+        super().__init__(timeout=timeout, disable_on_timeout=disable_on_timeout)
+
+    @discord.ui.button(label="Backstory Example", style=discord.ButtonStyle.primary)
+    async def backstory_example(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+
+        embed = discord.Embed(
+            title="Backstory Example",
+            color=discord.Color.blue(),
+        )
+
+        embed.description = (
+            "**Character **: A tough, mysterious detective.\n"
+            "**Backstory **: Grew up in a rough neighbourhood, lost a close friend to crime, became a detective to fight for justice.\n\n"
+        )
+
+        embed.add_field(
+            name="Important",
+            value=(
+                " * Your backstory doesn't have to be super long or complicated.\n"
+                " * The most important thing is that it helps you understand your character better.\n"
+                " * Have fun with it! You can be as creative as you want.\n\n"
+            ),
+            inline=False,
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @bot.slash_command(
@@ -485,29 +570,33 @@ async def on_message(message):
                     )
                     killed_row = cur.fetchone()
 
-                    if killer_row and killed_row:
-                        killer_id = killer_row[1]
-                        killed_id = killed_row[1]
-
                     embed = discord.Embed(
                         title=":skull: Player Death",
                         description=f"**{killer}** Killed **{killed}**",
                         color=discord.Color.red(),
                     )
 
-                    if killer_id:
-                        embed.add_field(
-                            name="Killer", value=f"<@{killer_id}>", inline=True
-                        )
-                    else:
-                        embed.add_field(name="Killer", value=f"{killer}>", inline=True)
+                    if killer_row and killed_row:
+                        killer_id = killer_row[1]
+                        killed_id = killed_row[1]
 
-                    if killed_id:
-                        embed.add_field(
-                            name="Killed", value=f"<@{killed_id}>", inline=True
-                        )
-                    else:
-                        embed.add_field(name="Killed", value=f"{killed}", inline=True)
+                        if killer_id:
+                            embed.add_field(
+                                name="Killer", value=f"<@{killer_id}>", inline=True
+                            )
+                        else:
+                            embed.add_field(
+                                name="Killer", value=f"{killer}>", inline=True
+                            )
+
+                        if killed_id:
+                            embed.add_field(
+                                name="Killed", value=f"<@{killed_id}>", inline=True
+                            )
+                        else:
+                            embed.add_field(
+                                name="Killed", value=f"{killed}", inline=True
+                            )
 
                     await bot.get_channel(1274363177215463445).send(embed=embed)
 

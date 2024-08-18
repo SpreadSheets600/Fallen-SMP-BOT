@@ -3,6 +3,7 @@ import discord
 import sqlite3
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
+from discord.ui.item import Item
 
 ADMINS = [
     727012870683885578,
@@ -14,6 +15,7 @@ ADMINS = [
     1147935418508132423,
     1261684685235294250,
 ]
+
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -27,6 +29,18 @@ class Moderation(commands.Cog):
             re.compile(r"(?=.*\bwhitelist\b)(?=.*\bplease\b)", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?kar\s?do\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?plz\b", re.IGNORECASE),
+        ]
+
+        self.backstory_patterns = [
+            re.compile(r"\bbackstory\b", re.IGNORECASE),
+            re.compile(r"\bback\s?story\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?samaj\s?nehi\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?samjha\s?nehi\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?explain\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?samaj\s?nehi\b", re.IGNORECASE),
+            re.compile(
+                r"(?=.*\backstory\b)(?=.*\bkaya\b)(?=.*\blikhu\b)", re.IGNORECASE
+            ),
         ]
 
         self.whitelist_already_patterns = [
@@ -236,7 +250,11 @@ class Moderation(commands.Cog):
         if message.author == self.bot.user or message.author.id in ADMINS:
             return
 
-        if message.channel.id == 1263898954999922720 or message.channel.id == 1273079560295940177 or message.channel.id == 1264430288247848992:
+        if (
+            message.channel.id == 1263898954999922720
+            or message.channel.id == 1273079560295940177
+            or message.channel.id == 1264430288247848992
+        ):
             return
 
         if message.id in self.replied_messages:
@@ -314,6 +332,156 @@ class Moderation(commands.Cog):
 
                     self.replied_messages.add(message.id)
                     return
+
+            for pattern in self.backstory_patterns:
+                if pattern.search(message.content):
+
+                    user = message.author
+
+                    embed = discord.Embed(
+                        title="Guide to Creating a Backstory for Your Character",
+                        description=(
+                            "A backstory is like a character's secret life. It's all the stuff that happened before the story starts. "
+                            "It helps shape who they are and why they do the things they do.\n\n"
+                            "Here's how to create one:"
+                        ),
+                        color=discord.Color.blue(),
+                    )
+
+                    embed.add_field(
+                        name="**Who are they?**",
+                        value=(
+                            " - What's their name, age, and where are they from?\n"
+                            " - What do they look like?\n"
+                            " - What's their personality like? Are they shy, brave, funny, or something else?"
+                        ),
+                        inline=False,
+                    )
+
+                    embed.add_field(
+                        name="**What's their story?**",
+                        value=(
+                            " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
+                            " - What are their dreams and goals?\n"
+                            " - What are they afraid of?"
+                        ),
+                        inline=False,
+                    )
+
+                    embed.add_field(
+                        name="**How do they act?**",
+                        value=(
+                            " - Their past shapes how they behave.\n"
+                            " - Did a bad experience make them mistrustful?\n"
+                            " - Did a happy childhood make them optimistic?"
+                        ),
+                        inline=False,
+                    )
+
+                    try:
+                        await user.send(embed=embed, view=BackstoryExample())
+
+                    except Exception as e:
+                        pass
+
+                    await message.channel.send(embed=embed, view=BackstoryExample())
+
+                    self.replied_messages.add(message.id)
+                    return
+
+            if any(ip in message.content.lower() for ip in ["ip"]):
+                user = message.author
+
+                embed = discord.Embed(
+                    title="Server Information",
+                    color=discord.Color.green(),
+                )
+
+                embed.add_field(
+                    name="BEDROCK",
+                    value=("**IP :** play.fallensmp.xyz\n" "**PORT :** 25671"),
+                    inline=False,
+                )
+
+                embed.add_field(
+                    name="JAVA", value="**IP :** play.fallensmp.xyz", inline=False
+                )
+
+                embed.add_field(name="VERSION", value="1.21", inline=False)
+
+                embed.add_field(
+                    name="Alternate IPs",
+                    value=(
+                        "**ALT IP 1 :** pre-01.gbnodes.host:25610\n"
+                        "**ALT IP 2 :** fallenrp.gbnodes.host"
+                    ),
+                    inline=False,
+                )
+
+                try:
+                    await user.send(embed=embed, view=IPButtons())
+                except discord.Forbidden:
+                    pass
+
+                await message.channel.send(embed=embed, view=IPButtons())
+
+                self.replied_messages.add(message.id)
+                return
+
+            if any(backstory in message.content.lower() for backstory in ["backstory"]):
+                user = message.author
+
+                embed = discord.Embed(
+                    title="Guide to Creating a Backstory for Your Character",
+                    description=(
+                        "A backstory is like a character's secret life. It's all the stuff that happened before the story starts. "
+                        "It helps shape who they are and why they do the things they do.\n\n"
+                        "Here's how to create one:"
+                    ),
+                    color=discord.Color.blue(),
+                )
+
+                embed.add_field(
+                    name="**Who are they?**",
+                    value=(
+                        " - What's their name, age, and where are they from?\n"
+                        " - What do they look like?\n"
+                        " - What's their personality like? Are they shy, brave, funny, or something else?"
+                    ),
+                    inline=False,
+                )
+
+                embed.add_field(
+                    name="**What's their story?**",
+                    value=(
+                        " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
+                        " - What are their dreams and goals?\n"
+                        " - What are they afraid of?"
+                    ),
+                    inline=False,
+                )
+
+                embed.add_field(
+                    name="**How do they act?**",
+                    value=(
+                        " - Their past shapes how they behave.\n"
+                        " - Did a bad experience make them mistrustful?\n"
+                        " - Did a happy childhood make them optimistic?"
+                    ),
+                    inline=False,
+                )
+
+                try:
+
+                    await user.send(embed=embed, view=BackstoryExample())
+
+                except Exception as e:
+                    pass
+
+                await message.channel.send(embed=embed, view=BackstoryExample())
+
+                self.replied_messages.add(message.id)
+                return
 
             if any(whitelist in message.content.lower() for whitelist in ["whitelist"]):
                 user = message.author
@@ -440,6 +608,80 @@ class Moderation(commands.Cog):
 
     def create_embed(self, title, description):
         return discord.Embed(title=title, description=description, color=0xFF0000)
+
+
+class IPButtons(discord.ui.View):
+    def __init__(
+        self,
+        *items: Item,
+        timeout: float | None = 180,
+        disable_on_timeout: bool = False,
+    ):
+        super().__init__(*items, timeout=timeout, disable_on_timeout=disable_on_timeout)
+
+    @discord.ui.button(label="Alternate IPs", style=discord.ButtonStyle.secondary)
+    async def alternate_ips(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+        embed = discord.Embed(
+            title="Alternate IPs",
+            description=(
+                "**ALT IP 1 :** pre-01.gbnodes.host:25610\n"
+                "**ALT IP 2 :** fallenrp.gbnodes.host"
+            ),
+            color=discord.Color.green(),
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="Version", style=discord.ButtonStyle.secondary)
+    async def version(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+        embed = discord.Embed(
+            title="Version",
+            description="## 1.21",
+            color=discord.Color.green(),
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+class BackstoryExample(discord.ui.View):
+    def __init__(
+        self,
+        *items: Item,
+        timeout: float | None = 180,
+        disable_on_timeout: bool = False,
+    ):
+        super().__init__(*items, timeout=timeout, disable_on_timeout=disable_on_timeout)
+
+    @discord.ui.button(label="Backstory Example", style=discord.ButtonStyle.primary)
+    async def backstory_example(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+        
+        embed = discord.Embed(
+            title="Backstory Example",
+            color=discord.Color.blue(),
+        )
+
+        embed.description = (
+            "**Character **: A tough, mysterious detective.\n"
+            "**Backstory **: Grew up in a rough neighbourhood, lost a close friend to crime, became a detective to fight for justice.\n\n"
+        )
+
+        embed.add_field (
+            name="Important",
+            value=(
+                " * Your backstory doesn't have to be super long or complicated.\n"
+                " * The most important thing is that it helps you understand your character better.\n"
+                " * Have fun with it! You can be as creative as you want.\n\n"
+            ),
+            inline=False
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 def setup(bot):
