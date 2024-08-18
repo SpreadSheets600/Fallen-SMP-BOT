@@ -154,7 +154,7 @@ async def guide(ctx: discord.ApplicationContext):
 
     embed = discord.Embed(
         title=":book: Server Guide",
-        description="Choose A Guide Topic \n\n**Basic Roles Info** : Learn About Server Roles\n**How To Get Whitelisted** : Learn about Whitelisting Process",
+        description="Choose A Guide Topic \n\n**Basic Roles Info** : Learn About Server Roles\n**How To Get Whitelisted** : Learn about Whitelisting Process\n**How To Write A Backstory** : Learn about Writing Character Backstory",
         color=0x2F3136,
     )
 
