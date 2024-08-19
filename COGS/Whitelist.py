@@ -12,6 +12,9 @@ ADMINS = [
     664157606587138048,
     1188730953217097811,
     896411007797325824,
+]
+
+MODS = [
     1261684685235294250,
     1147935418508132423,
 ]
@@ -31,9 +34,9 @@ class Whitelist(commands.Cog):
 
     @whitelist.command(name="delete", description="Delete User's Whitelist Application")
     async def del_whitelist(
-        self, ctx: discord.ApplicationContext, member: discord.Member
+        self, ctx: discord.ApplicationContext, member: discord.Member, reason: str
     ):
-        if ctx.author.id in ADMINS:
+        if ctx.author.id in ADMINS or ctx.author.id in MODS:
             conn = sqlite3.connect("User.db")
             cursor = conn.cursor()
 
@@ -43,6 +46,10 @@ class Whitelist(commands.Cog):
             row = cursor.fetchone()
 
             if row:
+
+                console_channel = self.bot.get_channel(console_channel_id)
+                await console_channel.send(f"whitelist remove {row[2]}")
+
                 cursor.execute(
                     "DELETE FROM user_data WHERE discord_user_id = ?", (str(member.id),)
                 )
@@ -51,6 +58,9 @@ class Whitelist(commands.Cog):
                 )
                 conn.commit()
 
+                if reason == None:
+                    reason = "No Reason Provided"
+
                 if Whitelist_ids[member.id] != None:
 
                     message_id = Whitelist_ids[member.id]
@@ -58,7 +68,6 @@ class Whitelist(commands.Cog):
                     message = await channel.fetch_message(message_id)
 
                     await message.delete()
-
                     del Whitelist_ids[member.id]
 
                 embed = discord.Embed(
@@ -66,6 +75,20 @@ class Whitelist(commands.Cog):
                     description=f"Whitelist Application For **{member.display_name}** Has Been Deleted.",
                     color=discord.Color.green(),
                 )
+
+                embed.add_field(name="Reason", value=reason, inline=False)
+
+                user_embed = discord.Embed(
+                    title="Whitelist Application Deleted",
+                    description=f"Your Whitelist Application Has Been Deleted By Admin.\nReason : {reason}",
+                    color=discord.Color.red(),
+                )
+
+                user = self.bot.get_user(member.id)
+                await user.send(embed=user_embed)
+
+                await message.channel.send(embed=embed)
+
             else:
                 embed = discord.Embed(
                     title="User Not Found",
@@ -75,9 +98,10 @@ class Whitelist(commands.Cog):
 
             conn.close()
             await ctx.respond(embed=embed)
+
         else:
             await ctx.respond(
-                "You don't have permission to use this command.", ephemeral=True
+                "You Don't Have Permission To Use This Command.", ephemeral=True
             )
 
     @whitelist.command(name="help", description="Get Video Help For Whitelisting")
@@ -96,7 +120,7 @@ class Whitelist(commands.Cog):
     async def add_whitelist(
         self, ctx: discord.ApplicationContext, member: discord.Member, type: str
     ):
-        if ctx.author.id in ADMINS:
+        if ctx.author.id in ADMINS or ctx.author.id in MODS:
             conn = sqlite3.connect("User.db")
             cursor = conn.cursor()
 
@@ -153,7 +177,7 @@ class Whitelist(commands.Cog):
 
     @whitelist.command(name="view", description="Show All Whitelisted Members")
     async def show_whitelist(self, ctx: discord.ApplicationContext):
-        if ctx.author.id in ADMINS:
+        if ctx.author.id in ADMINS or ctx.author.id in MODS:
             conn = sqlite3.connect("User.db")
             cursor = conn.cursor()
 
@@ -198,11 +222,11 @@ class Whitelist(commands.Cog):
             await ctx.respond(embed=embeds[0], view=view)
         else:
             await ctx.respond(
-                "You don't have permission to use this command.", ephemeral=True
+                "You Don't Have Permission To Use This Command.", ephemeral=True
             )
 
-    @whitelist.command(name="form", description="Get Whitelisted On Fallen SMP")
-    async def form(self, ctx: discord.ApplicationContext):
+    @commands.slash_command(name="whitelist", description="Get Whitelisted On Fallen SMP")
+    async def whitelist(self, ctx: discord.ApplicationContext):
         conn = sqlite3.connect("User.db")
         cursor = conn.cursor()
 

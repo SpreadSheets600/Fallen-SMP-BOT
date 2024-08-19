@@ -1,9 +1,10 @@
 import re
 import discord
 import sqlite3
+from datetime import timedelta
 from discord.ext import commands
-from discord.commands import SlashCommandGroup
 from discord.ui.item import Item
+from discord.commands import SlashCommandGroup
 
 ADMINS = [
     727012870683885578,
@@ -12,8 +13,11 @@ ADMINS = [
     664157606587138048,
     1188730953217097811,
     896411007797325824,
-    1147935418508132423,
+]
+
+MODS = [
     1261684685235294250,
+    1147935418508132423,
 ]
 
 
@@ -22,22 +26,23 @@ class Moderation(commands.Cog):
         self.bot = bot
 
         self.whitelist_patterns = [
+            re.compile(r"\bwhite\s?list\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?me\b", re.IGNORECASE),
+            re.compile(r"\bwhitelist\s?plz\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?kardo\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?please\b", re.IGNORECASE),
+            re.compile(r"\bwhitelist\s?kar\s?do\b", re.IGNORECASE),
             re.compile(r"(?=.*\bwhitelist\b)(?=.*\bkardo\b)", re.IGNORECASE),
             re.compile(r"(?=.*\bwhitelist\b)(?=.*\bplease\b)", re.IGNORECASE),
-            re.compile(r"\bwhitelist\s?kar\s?do\b", re.IGNORECASE),
-            re.compile(r"\bwhitelist\s?plz\b", re.IGNORECASE),
         ]
 
         self.backstory_patterns = [
             re.compile(r"\bbackstory\b", re.IGNORECASE),
             re.compile(r"\bback\s?story\b", re.IGNORECASE),
-            re.compile(r"\bbackstory\s?samaj\s?nehi\b", re.IGNORECASE),
-            re.compile(r"\bbackstory\s?samjha\s?nehi\b", re.IGNORECASE),
             re.compile(r"\bbackstory\s?explain\b", re.IGNORECASE),
             re.compile(r"\bbackstory\s?samaj\s?nehi\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?samaj\s?nehi\b", re.IGNORECASE),
+            re.compile(r"\bbackstory\s?samjha\s?nehi\b", re.IGNORECASE),
             re.compile(
                 r"(?=.*\backstory\b)(?=.*\bkaya\b)(?=.*\blikhu\b)", re.IGNORECASE
             ),
@@ -58,13 +63,13 @@ class Moderation(commands.Cog):
             re.compile(
                 r"(?=.*\bwhitelist\b)(?=.*\bform\b)(?=.*\bsubmitted\b)", re.IGNORECASE
             ),
-            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bdone\b)", re.IGNORECASE),
-            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bcompleted\b)", re.IGNORECASE),
-            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bsubmitted\b)", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?done\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?complete\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?submitted\b", re.IGNORECASE),
             re.compile(r"\bwhitelist\s?form\s?submitted\b", re.IGNORECASE),
+            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bdone\b)", re.IGNORECASE),
+            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bcompleted\b)", re.IGNORECASE),
+            re.compile(r"(?=.*\bwhitelist\b)(?=.*\bsubmitted\b)", re.IGNORECASE),
         ]
 
         self.server_ip_pattern = re.compile(
@@ -115,8 +120,7 @@ class Moderation(commands.Cog):
         description="Commands To Warn Users",
     )
 
-    @Warning.command(name="give", description="Warns A User")
-    @commands.has_permissions(manage_messages=True)
+    @commands.slash_command(name="warn", description="Warns A User")
     async def warn(self, ctx, member: discord.Member):
 
         warnings = self.add_warning(member.id)
@@ -152,7 +156,6 @@ class Moderation(commands.Cog):
             await ctx.send(embed=embed)
 
     @Warning.command(name="reset", description="Resets Warnings Of A User")
-    @commands.has_permissions(manage_messages=True)
     async def reset_warnings(self, ctx, member: discord.Member):
         self.cursor.execute("DELETE FROM warnings WHERE user_id = ?", (member.id,))
         self.conn.commit()
@@ -166,6 +169,10 @@ class Moderation(commands.Cog):
 
     @commands.slash_command(name="warnings", description="Shows Warnings Of A User")
     async def show_warnings(self, ctx, member: discord.Member):
+
+        if member == None:
+            member = ctx.author
+
         warnings = self.get_warnings(member.id)
         embed = self.create_embed(
             title="Warnings",
@@ -173,9 +180,25 @@ class Moderation(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @commands.slash_command(name="timeout", description="Timeouts A User")
+    async def timeout_user(
+        self, ctx, member: discord.Member, duration: timedelta, *, reason: str = "No Reason Provided"
+    ):
+        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
+            return await ctx.send(
+                "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
+            )
+
+        await member.timeout_for(duration, reason=reason)
+        embed = self.create_embed(
+            title="Timeout",
+            description=f"{member.mention} Has Been Timed Out For {duration}\n### Reason: {reason}",
+        )
+        await ctx.send(embed=embed)
+
     @commands.slash_command(name="clear", description="Clears Messages Of A User")
     async def clear_messages(self, ctx, member: discord.Member, limit: int = 5):
-        if ctx.author.id not in ADMINS:
+        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
             return await ctx.send(
                 "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
             )
@@ -192,7 +215,7 @@ class Moderation(commands.Cog):
 
     @commands.slash_command(name="purge", description="Clears Messages In A Channel")
     async def purge_messages(self, ctx, limit: int = 5):
-        if ctx.author.id not in ADMINS:
+        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
             return await ctx.send(
                 "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
             )
@@ -381,31 +404,33 @@ class Moderation(commands.Cog):
                     )
 
                     embed.add_field(
-                        name="**Who are they?**",
+                        name="**Who Are They ?**",
                         value=(
-                            " - What's their name, age, and where are they from?\n"
-                            " - What do they look like?\n"
-                            " - What's their personality like? Are they shy, brave, funny, or something else?"
+                            " - What do they look like ?\n"
+                            " - What's their name, age, and where are they from ?\n"
+                            " - What's their personality like? Are they shy, brave, funny, or something else ?"
                         ),
                         inline=False,
                     )
 
                     embed.add_field(
-                        name="**What's their story?**",
+                        name="**What's Their story?**",
                         value=(
-                            " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
-                            " - What are their dreams and goals?\n"
-                            " - What are they afraid of?"
+                            " - What are they afraid of ?\n"
+                            " - Did something bad happen ?\n"
+                            " - Think about big events in their life.\n"
+                            " - Did they have a great childhood ?\n"
+                            " - What are their dreams and goals ?\n"
                         ),
                         inline=False,
                     )
 
                     embed.add_field(
-                        name="**How do they act?**",
+                        name="**How Do They Act ?**",
                         value=(
                             " - Their past shapes how they behave.\n"
-                            " - Did a bad experience make them mistrustful?\n"
-                            " - Did a happy childhood make them optimistic?"
+                            " - Did a bad experience make them mistrustful ?\n"
+                            " - Did a happy childhood make them optimistic ?"
                         ),
                         inline=False,
                     )
@@ -474,31 +499,33 @@ class Moderation(commands.Cog):
                 )
 
                 embed.add_field(
-                    name="**Who are they?**",
+                    name="**Who Are They ?**",
                     value=(
-                        " - What's their name, age, and where are they from?\n"
-                        " - What do they look like?\n"
-                        " - What's their personality like? Are they shy, brave, funny, or something else?"
+                        " - What do they look like ?\n"
+                        " - What's their name, age, and where are they from ?\n"
+                        " - What's their personality like? Are they shy, brave, funny, or something else ?"
                     ),
                     inline=False,
                 )
 
                 embed.add_field(
-                    name="**What's their story?**",
+                    name="**What's Their story?**",
                     value=(
-                        " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
-                        " - What are their dreams and goals?\n"
-                        " - What are they afraid of?"
+                        " - What are they afraid of ?\n"
+                        " - Did something bad happen ?\n"
+                        " - Think about big events in their life.\n"
+                        " - Did they have a great childhood ?\n"
+                        " - What are their dreams and goals ?\n"
                     ),
                     inline=False,
                 )
 
                 embed.add_field(
-                    name="**How do they act?**",
+                    name="**How Do They Act ?**",
                     value=(
                         " - Their past shapes how they behave.\n"
-                        " - Did a bad experience make them mistrustful?\n"
-                        " - Did a happy childhood make them optimistic?"
+                        " - Did a bad experience make them mistrustful ?\n"
+                        " - Did a happy childhood make them optimistic ?"
                     ),
                     inline=False,
                 )
@@ -515,7 +542,10 @@ class Moderation(commands.Cog):
                 self.replied_messages.add(message.id)
                 return
 
-            if any(whitelist in message.content.lower() for whitelist in ["whitelist"]):
+            if any(
+                whitelist in message.content.lower()
+                for whitelist in ["whitelist", "whitelisted"]
+            ):
                 user = message.author
 
                 try:
@@ -614,7 +644,7 @@ class Moderation(commands.Cog):
                 msg
                 for msg in messages
                 if msg.author == message.author
-                and (discord.utils.utcnow() - msg.created_at).total_seconds() < 10
+                and (discord.utils.utcnow() - msg.created_at).total_seconds() < 5
             ]
 
             if len(user_messages) >= 5:
@@ -692,7 +722,7 @@ class BackstoryExample(discord.ui.View):
     async def backstory_example(
         self, button: discord.ui.Button, interaction: discord.Interaction
     ):
-        
+
         embed = discord.Embed(
             title="Backstory Example",
             color=discord.Color.blue(),
@@ -703,14 +733,14 @@ class BackstoryExample(discord.ui.View):
             "**Backstory **: Grew up in a rough neighbourhood, lost a close friend to crime, became a detective to fight for justice.\n\n"
         )
 
-        embed.add_field (
+        embed.add_field(
             name="Important",
             value=(
                 " * Your backstory doesn't have to be super long or complicated.\n"
                 " * The most important thing is that it helps you understand your character better.\n"
                 " * Have fun with it! You can be as creative as you want.\n\n"
             ),
-            inline=False
+            inline=False,
         )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)

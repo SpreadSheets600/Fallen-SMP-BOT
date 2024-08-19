@@ -162,6 +162,9 @@ async def guide(ctx: discord.ApplicationContext):
 
 
 class Guide_Menu(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
     @discord.ui.select(
         placeholder="Guide Menu",
         min_values=1,
@@ -551,6 +554,23 @@ async def on_message(message):
                     "ghast",
                     "cube",
                     "slime",
+                    "place",
+                    "guardian",
+                    "golem",
+                    "lava",
+                    "pillager",
+                    "spirit",
+                    "blaze",
+                    "shulker",
+                    "wither",
+                    "dragon",
+                    "zoglin",
+                    "hoglin",
+                    "piglin",
+                    "strider",
+                    "man",
+                    "bee",
+                    "hard",
                 ]:
                     return
 
@@ -586,7 +606,7 @@ async def on_message(message):
                             )
                         else:
                             embed.add_field(
-                                name="Killer", value=f"{killer}>", inline=True
+                                name="Killer", value=f"{killer}", inline=True
                             )
 
                         if killed_id:
