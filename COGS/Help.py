@@ -123,24 +123,23 @@ class CEmbed(discord.ui.View):
             )
 
             wh_delete = (
-                self.bot.get_application_command("whitelist").subcommands[0].mention
+                self.bot.get_application_command("wl").subcommands[0].mention
             )
 
             wh_add = (
-                self.bot.get_application_command("whitelist").subcommands[1].mention
+                self.bot.get_application_command("wl").subcommands[1].mention
             )
 
             wh_list = (
-                self.bot.get_application_command("whitelist").subcommands[2].mention
+                self.bot.get_application_command("wl").subcommands[2].mention
             )
 
             wh_form = (
-                self.bot.get_application_command("whitelist").subcommands[3].mention
+                self.bot.get_application_command("whitelist")
             )
 
             wh_embed.add_field(name="Add", value=wh_add, inline=False)
             wh_embed.add_field(name="List", value=wh_list, inline=False)
-            wh_embed.add_field(name="Form", value=wh_form, inline=False)
             wh_embed.add_field(name="Delete", value=wh_delete, inline=False)
 
             await interaction.response.send_message(embed=wh_embed, ephemeral=True)

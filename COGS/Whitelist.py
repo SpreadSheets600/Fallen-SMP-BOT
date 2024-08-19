@@ -30,9 +30,9 @@ class Whitelist(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    whitelist = SlashCommandGroup(name="whitelist", description="Whitelist Commands")
+    wl = SlashCommandGroup(name="wl", description="Whitelist Commands")
 
-    @whitelist.command(name="delete", description="Delete User's Whitelist Application")
+    @wl.command(name="delete", description="Delete User's Whitelist Application")
     async def del_whitelist(
         self, ctx: discord.ApplicationContext, member: discord.Member, reason: str
     ):
@@ -61,14 +61,18 @@ class Whitelist(commands.Cog):
                 if reason == None:
                     reason = "No Reason Provided"
 
-                if Whitelist_ids[member.id] != None:
+                try:
+                    if Whitelist_ids[member.id] != None:
 
-                    message_id = Whitelist_ids[member.id]
-                    channel = self.bot.get_channel(logs_channel_id)
-                    message = await channel.fetch_message(message_id)
+                        message_id = Whitelist_ids[member.id]
+                        channel = self.bot.get_channel(logs_channel_id)
+                        message = await channel.fetch_message(message_id)
 
-                    await message.delete()
-                    del Whitelist_ids[member.id]
+                        await message.delete()
+                        del Whitelist_ids[member.id]
+                
+                except Exception as e:
+                    pass
 
                 embed = discord.Embed(
                     title="Whitelist Application Deleted",
@@ -104,14 +108,14 @@ class Whitelist(commands.Cog):
                 "You Don't Have Permission To Use This Command.", ephemeral=True
             )
 
-    @whitelist.command(name="help", description="Get Video Help For Whitelisting")
+    @wl.command(name="help", description="Get Video Help For Whitelisting")
     async def help_whitelist(self, ctx: discord.ApplicationContext):
 
         await ctx.respond(
             "https://cdn.discordapp.com/attachments/1195302501797343243/1273306886728585420/Whitelist.mp4?ex=66be22f2&is=66bcd172&hm=da9c1be57bef3638a6f7720b5bd4883ccf208017fe839f0f04d2affabdc4f60f&"
         )
 
-    @whitelist.command(name="add", description="Add User To Whitelist")
+    @wl.command(name="add", description="Add User To Whitelist")
     @option(
         "type",
         description="Choose The Whitelist Type",
@@ -175,7 +179,7 @@ class Whitelist(commands.Cog):
                 "You Don't Have Permission To Use This Command", ephemeral=True
             )
 
-    @whitelist.command(name="view", description="Show All Whitelisted Members")
+    @wl.command(name="view", description="Show All Whitelisted Members")
     async def show_whitelist(self, ctx: discord.ApplicationContext):
         if ctx.author.id in ADMINS or ctx.author.id in MODS:
             conn = sqlite3.connect("User.db")
