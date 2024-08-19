@@ -182,14 +182,17 @@ class Moderation(commands.Cog):
 
     @commands.slash_command(name="timeout", description="Timeouts A User")
     async def timeout_user(
-        self, ctx, member: discord.Member, duration: timedelta, *, reason: str = "No Reason Provided"
+        self, ctx, member: discord.Member, duration: int, *, reason: str = "No Reason Provided"
     ):
         if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
             return await ctx.send(
                 "You Are Not Allowed To Use This Command\nSOHAM Must Be Noob To Let You Use This Command"
             )
 
-        await member.timeout_for(duration, reason=reason)
+        await member.timeout_for(
+                discord.utils.utcnow() + discord.timedelta(minutes=duration),
+                reason="Received A Warning",
+            )
         embed = self.create_embed(
             title="Timeout",
             description=f"{member.mention} Has Been Timed Out For {duration}\n### Reason: {reason}",
