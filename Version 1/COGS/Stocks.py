@@ -16,7 +16,7 @@ class Stocks(commands.Cog):
         self.bot = bot
         self.conn = sqlite3.connect("User.db")
         self.finnhub_client = finnhub.Client(
-            api_key="cqnpr21r01qo8864oasgcqnpr21r01qo8864oat0"
+            api_key=""
         )
         self.console_channel_id = 1263898954999922720
         self.name = ""
