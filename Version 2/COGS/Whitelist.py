@@ -1,4 +1,5 @@
 import os
+import json
 import random
 import pymongo
 import discord
@@ -39,6 +40,14 @@ class Whitelist(commands.Cog):
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
         self.collection = self.db["UserData"]
+
+        try:
+            with open("BLOCKED.json", "r") as f:
+                self.blocked = json.load(f)
+        except Exception as e:
+            with open("BLOCKED.json", "w") as f:
+                json.dump([], f)
+                self.blocked = []
 
         # self.bot.add_view(WhitelistButtons(user_id=0, user=None, bot=bot))
         # self.bot.add_view(WhitelistRejectModal(bot=bot, user=None))
@@ -89,7 +98,9 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="search", description="Search For A User In The Whitelist", aliases=["s"])
+    @wl.command(
+        name="search", description="Search For A User In The Whitelist", aliases=["s"]
+    )
     async def search(self, ctx, user):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -183,6 +194,12 @@ class Whitelist(commands.Cog):
                         color=0xD5E4CF,
                     )
 
+                    embed.add_field(
+                        name="Main Server",
+                        value="[Join Now](https://discord.gg/2GWK7NjYek)",
+                        inline=False,
+                    )
+
                     User = self.bot.get_user(user.id)
                     await User.send(embed=user_embed)
 
@@ -206,7 +223,11 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="remove", description="Remove A User From The Whitelist", aliases=["r", "del"])
+    @wl.command(
+        name="remove",
+        description="Remove A User From The Whitelist",
+        aliases=["r", "del"],
+    )
     async def remove(self, ctx, user: discord.User):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -263,7 +284,6 @@ class Whitelist(commands.Cog):
             user = ctx.author
 
         try:
-            # Fetch user data from MongoDB
             document = self.collection.find_one({"ID": user.id})
 
             if document:
@@ -396,13 +416,30 @@ class Whitelist(commands.Cog):
             await error_channel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @bridge.bridge_command(
-        name="whitelist", description="Whitelist Application For Fallen SMP", aliases=["wh"]
+        name="whitelist",
+        description="Whitelist Application For Fallen SMP",
+        aliases=["wh"],
     )
     async def whitelist(self, ctx):
         try:
             document = self.collection.find_one({"ID": ctx.author.id})
 
-            if document:
+            with open("BLOCKED.json", "r") as f:
+                self.blocked = json.load(f)
+
+                blocked_data = self.blocked["Blocked"]
+
+            if ctx.author.id in blocked_data:
+                embed = discord.Embed(
+                    title="Application Blocked",
+                    description="You Have Been Blocked From Submitting The Application. \nIf You Think This Is A Mistake, Contact The Admins.",
+                    color=0xF2D5CD,
+                )
+
+                await ctx.respond(embed=embed, ephemeral=True)
+
+
+            elif document:
                 embed = discord.Embed(
                     title="Application Already Submitted",
                     description="You Are Already WhiteListed. \nIf You Want To Update Your Application, Contact The Admins.",
@@ -447,6 +484,57 @@ class Whitelist(commands.Cog):
             ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
             await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
+    @bridge.bridge_command(
+        name="guide",
+        description="Guide For Fallen SMP",
+        aliases=["g"],
+    )
+    async def guide(self, ctx):
+        embed = discord.Embed(
+            title=":book: Server Guide",
+            description="Choose A Guide Topic \n\n**Basic Roles Info** : Learn About Server Roles\n**How To Get Whitelisted** : Learn about Whitelisting Process\n**How To Write A Backstory** : Learn about Writing Character Backstory",
+            color=0x2F3136,
+        )
+
+        await ctx.respond(embed=embed, view=Guide_Menu())
+
+    @bridge.bridge_command(
+        name="rules",
+        description="Rules For Fallen SMP",
+        aliases=["r"],
+    )
+    async def rules(self, ctx):
+        rules = """
+            1. **Refrain from Unnecessary PvP**
+            > If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.
+
+            2. **Roleplay as Your Character**
+            > Since this is a roleplay server, you must act as your character described in your character story. This enhances the immersive experience for everyone.
+
+            3. **Value Your Life In Game As Much As In Real Life** 
+            > Treat your in-game life with care and caution, just as you would in reality. This rule ensures a more realistic and engaging gameplay experience.
+
+            4. **No Chat Toxicity**
+            > Toxic behaviour in chat is strictly prohibited. Maintain a respectful and positive environment for all players.
+
+            5. **No Stealing**
+            > Stealing from other players is not allowed. Engaging in theft can lead to being labelled as an outlaw and facing consequences.
+
+            6. **Obey Orders from Duke, King, and Emperor**
+            > You must follow the orders issued by the Duke, King, and Emperor. This maintains the hierarchical structure and order within the server.
+
+            7. **Building Permissions Required**
+            > To build a house, you must obtain permission from the Duke. This ensures organized and planned development within the server.
+            """
+
+        embed = discord.Embed(
+            title="Server Rules",
+            description=rules,
+            color=0x2F3136,
+        )
+
+        await ctx.respond(embed=embed)
+
 
 # =================================================================================================== #
 
@@ -459,19 +547,83 @@ class WhitelistApplication(discord.ui.View):
 
         self.user = user
 
-    @discord.ui.button(label="Whitelist Form", style=discord.ButtonStyle.secondary)
+        button_support = discord.ui.Button(
+            label="Main Server",
+            style=discord.ButtonStyle.url,
+            url="https://discord.gg/2GWK7NjYek",
+        )
+        self.add_item(button_support)
+
+    @discord.ui.button(label="Guide", style=discord.ButtonStyle.secondary)
+    async def guide_button_callback(self, button, interaction):
+
+        if interaction.user.id != self.interaction_user.id:
+
+            await interaction.response.send_message(
+                "You Are Not Allowed To Use This Button", ephemeral=True
+            )
+
+        else:
+            embed = discord.Embed(
+                title=":book: Server Guide",
+                description="Choose A Guide Topic \n\n**Basic Roles Info** : Learn About Server Roles\n**How To Get Whitelisted** : Learn about Whitelisting Process\n**How To Write A Backstory** : Learn about Writing Character Backstory",
+                color=0x2F3136,
+            )
+
+            await interaction.response.send_message(
+                embed=embed, ephemeral=True, view=Guide_Menu()
+            )
+
+    @discord.ui.button(label="Rule", style=discord.ButtonStyle.secondary)
+    async def rule_button_callback(self, button, interaction):
+
+        if interaction.user.id != self.interaction_user.id:
+
+            await interaction.response.send_message(
+                "You Are Not Allowed To Use This Button", ephemeral=True
+            )
+
+        else:
+
+            rules = """
+                1. **Refrain from Unnecessary PvP**
+                > If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.
+
+                2. **Roleplay as Your Character**
+                > Since this is a roleplay server, you must act as your character described in your character story. This enhances the immersive experience for everyone.
+
+                3. **Value Your Life In Game As Much As In Real Life** 
+                > Treat your in-game life with care and caution, just as you would in reality. This rule ensures a more realistic and engaging gameplay experience.
+
+                4. **No Chat Toxicity**
+                > Toxic behaviour in chat is strictly prohibited. Maintain a respectful and positive environment for all players.
+
+                5. **No Stealing**
+                > Stealing from other players is not allowed. Engaging in theft can lead to being labelled as an outlaw and facing consequences.
+
+                6. **Obey Orders from Duke, King, and Emperor**
+                > You must follow the orders issued by the Duke, King, and Emperor. This maintains the hierarchical structure and order within the server.
+
+                7. **Building Permissions Required**
+                > To build a house, you must obtain permission from the Duke. This ensures organized and planned development within the server.
+                """
+
+            embed = discord.Embed(
+                title="Server Rules",
+                description=rules,
+                color=0x2F3136,
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="Form", style=discord.ButtonStyle.secondary)
     async def whitelist_form(self, button, interaction):
 
         if interaction.user.id != self.interaction_user.id:
 
-            await interaction.resonse.send_message(
+            await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
-
-            message_id = interaction.message.id
-
-            button.disabled = True
-            await interaction.followup.edit_message(message_id=message_id, view=self)
 
         else:
 
@@ -487,6 +639,172 @@ class WhitelistApplication(discord.ui.View):
 
             self.disable_all_items()
             await interaction.followup.edit_message(message_id=message_id, view=self)
+
+
+# =================================================================================================== #
+class Guide_Menu(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.select(
+        placeholder="Guide Menu",
+        min_values=1,
+        max_values=1,
+        options=[
+            discord.SelectOption(
+                label="- Basic Roles Info", description="Learn About Server Roles"
+            ),
+            discord.SelectOption(
+                label="- How To Get Whitelisted",
+                description="Learn About Whitelisting Process",
+            ),
+            discord.SelectOption(
+                label="- How To Write A Backstory",
+                description="Learn About Writing Character Backstory",
+            ),
+        ],
+    )
+    async def select_callback(self, select, interaction):
+
+        if select.values[0] == "Basic Roles Info":
+            guide_1 = """
+            ## What Are The Roles in the Server?
+
+            Since the server is in its early phase, it has only a few roles:
+
+            1. **Citizen**
+            - **Description**: The basic role given to everyone. Citizens focus on building their houses and farming, with the goal of becoming a merchant.
+            - **Responsibilities**: Building homes, farming, and community participation.
+
+            2. **Merchant**
+            - **Description**: The sole businesspeople of the server. You need at least two days of gameplay time to apply for this role.
+            - **Responsibilities**: Setting up shops and selling items.
+
+            3. **Duke**
+            - **Description**: The direct subordinate to the King, holding significant power. Dukes assign the merchant role to citizens and address their issues.
+            - **Responsibilities**: Assigning merchant roles, resolving citizen issues, placing bounties, and issuing soft bans for rule violations.
+            - **Requirements**: At least one week of gameplay time to apply.
+
+            4. **King**
+            - **Description**: The highest role in the server, overseeing matters of high importance and assigning the Duke role to merchants.
+            - **Responsibilities**: Managing high-level issues and maintaining order.
+            - **Selection**: Kings are elected at the beginning of every month.
+            """
+
+            embed = discord.Embed(
+                title=":book: Server Guide",
+                description=guide_1,
+                color=0x2F3136,
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif select.values[0] == "How To Get Whitelisted":
+            guide_2 = """
+            ## How to Get Whitelisted ?
+
+            To get whitelisted, follow these steps:
+
+            1. **Use the Command**: Enter the command `/whitelist` <@1264849548334071828> in the chat.
+            2. **Fill Out the Form**: This command will prompt a form that you need to complete. The form will ask for details such as your in-game name, your reason for joining, and any other relevant information.
+            3. **Wait for Review**: Once you have submitted the form, it will be reviewed by the moderators.
+            4. **Approval**: If your application is approved, the moderators will add you to the whitelist, allowing you to join the server.
+
+            **Additional Information**:
+            - **Be Patient**: The review process may take some time, so please be patient.
+            - **Accuracy**: Ensure that all the information you provide in the form is accurate and truthful to increase your chances of being approved.
+            - **Follow-Up**: If you haven't received a response after a reasonable amount of time, you may politely inquire about the status of your application with the moderators ( I know no one will follow this, so just ping <@727012870683885578> Or <@664157606587138048> ).
+            """
+
+            embed = discord.Embed(
+                title=":book: Server Guide",
+                description=guide_2,
+                color=0x2F3136,
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif select.values[0] == "How To Write A Backstory":
+            embed = discord.Embed(
+                title="Guide to Creating a Backstory for Your Character",
+                description=(
+                    "A backstory is like a character's secret life. It's all the stuff that happened before the story starts. "
+                    "It helps shape who they are and why they do the things they do.\n\n"
+                    "Here's how to create one:"
+                ),
+                color=discord.Color.blue(),
+            )
+
+            embed.add_field(
+                name="**Who are they?**",
+                value=(
+                    " - What's their name, age, and where are they from?\n"
+                    " - What do they look like?\n"
+                    " - What's their personality like? Are they shy, brave, funny, or something else?"
+                ),
+                inline=False,
+            )
+
+            embed.add_field(
+                name="**What's their story?**",
+                value=(
+                    " - Think about big events in their life. Did something bad happen? Did they have a great childhood?\n"
+                    " - What are their dreams and goals?\n"
+                    " - What are they afraid of?"
+                ),
+                inline=False,
+            )
+
+            embed.add_field(
+                name="**How do they act?**",
+                value=(
+                    " - Their past shapes how they behave.\n"
+                    " - Did a bad experience make them mistrustful?\n"
+                    " - Did a happy childhood make them optimistic?"
+                ),
+                inline=False,
+            )
+
+            await interaction.response.send_message(
+                embed=embed, view=BackstoryExample(), ephemeral=True
+            )
+
+
+# =================================================================================================== #
+class BackstoryExample(discord.ui.View):
+    def __init__(
+        self,
+        timeout: float | None = 180,
+        disable_on_timeout: bool = False,
+    ):
+        super().__init__(timeout=timeout, disable_on_timeout=disable_on_timeout)
+
+    @discord.ui.button(label="Backstory Example", style=discord.ButtonStyle.primary)
+    async def backstory_example(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
+
+        embed = discord.Embed(
+            title="Backstory Example",
+            color=discord.Color.blue(),
+        )
+
+        embed.description = (
+            "**Character **: A tough, mysterious detective.\n"
+            "**Backstory **: Grew up in a rough neighbourhood, lost a close friend to crime, became a detective to fight for justice.\n\n"
+        )
+
+        embed.add_field(
+            name="Important",
+            value=(
+                " * Your backstory doesn't have to be super long or complicated.\n"
+                " * The most important thing is that it helps you understand your character better.\n"
+                " * Have fun with it! You can be as creative as you want.\n\n"
+            ),
+            inline=False,
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 # =================================================================================================== #
@@ -639,8 +957,11 @@ class WhitelistModal(discord.ui.Modal):
 
             WhitelistChannel = self.bot.get_channel(WHITELIST_CHANNEL)
             await WhitelistChannel.send(
+                "<@727012870683885578> <@1188730953217097811> <@664157606587138048> <@1267510397494362216> <@437622938242514945>",
                 embed=embed,
-                view=WhitelistButtons(interaction.user.id, self.user, main_embed=embed),
+                view=WhitelistButtons(
+                    interaction.user.id, self.user, self.bot, main_embed=embed
+                ),
             )
 
             self.collection.insert_one(
@@ -665,12 +986,17 @@ class WhitelistModal(discord.ui.Modal):
 
 class WhitelistButtons(discord.ui.View):
     def __init__(
-        self, user_id: int = None, user: discord.Member = None, main_embed=None
+        self,
+        user_id: int = None,
+        user: discord.Member = None,
+        bot=None,
+        main_embed=None,
     ):
         super().__init__(timeout=None)
         self.main_embed = main_embed
         self.user_id = user_id
         self.user = user
+        self.bot = bot
 
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
@@ -790,6 +1116,71 @@ class WhitelistButtons(discord.ui.View):
             )
 
             self.main_embed.color = discord.Color.red()
+
+            await interaction.followup.edit_message(
+                embed=self.main_embed, message_id=message_id, view=self
+            )
+
+    @discord.ui.button(
+        label="Block", custom_id="block", style=discord.ButtonStyle.danger
+    )
+    async def block_button_callback(self, button, interaction):
+
+        if interaction.user.id not in ADMINS:
+            await interaction.response.send_message(
+                "You Are Not Allowed To Use This Button", ephemeral=True
+            )
+
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+            await interaction.followup.edit_message(message_id=message_id, view=self)
+
+        else:
+
+            with open("BLOCKED.json", "r") as f:
+                data = json.load(f)
+
+            if "Blocked" not in data or not isinstance(data["Blocked"], list):
+                data["Blocked"] = []
+
+            print(f"[ + ] Whitelist COG : User Blocked : {self.user_id}")
+            data["Blocked"].append(self.user_id)
+
+            with open("BLOCKED.json", "w") as f:
+                json.dump(data, f, indent=4)
+
+            embed = discord.Embed(
+                title="User Blocked",
+                description=f"User `{self.user.display_name}` Has Been Blocked From Submitting The Application",
+                color=0xFBEADC,
+            )
+
+            document = self.collection.find_one({"ID": self.user.id})
+
+            if document:
+                username = document.get("Username")
+                self.collection.delete_one({"ID": self.user.id})
+
+            user = self.bot.get_user(self.user_id)
+            try:
+                await user.send(embed=embed)
+            except Exception as e:
+                pass
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+
+            self.main_embed.add_field(
+                name="User Blocked By",
+                value=f"{interaction.user.display_name}",
+                inline=False,
+            )
 
             await interaction.followup.edit_message(
                 embed=self.main_embed, message_id=message_id, view=self
