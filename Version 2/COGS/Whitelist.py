@@ -89,7 +89,7 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="search", description="Search For A User In The Whitelist")
+    @wl.command(name="search", description="Search For A User In The Whitelist", aliases=["s"])
     async def search(self, ctx, user):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -206,7 +206,7 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="remove", description="Remove A User From The Whitelist")
+    @wl.command(name="remove", description="Remove A User From The Whitelist", aliases=["r", "del"])
     async def remove(self, ctx, user: discord.User):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -396,7 +396,7 @@ class Whitelist(commands.Cog):
             await error_channel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @bridge.bridge_command(
-        name="whitelist", description="Whitelist Application For Fallen SMP"
+        name="whitelist", description="Whitelist Application For Fallen SMP", aliases=["wl", "wh"]
     )
     async def whitelist(self, ctx):
         try:

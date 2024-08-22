@@ -25,8 +25,14 @@ print("[ + ] Environment Variables Loaded")
 
 # =================================================================================================== #
 
+def get_prefix(bot, message):
+    prefixes = ["FS!", "fs!"]
+    return commands.when_mentioned_or(*prefixes)(bot, message)
+
 intents = discord.Intents.all()
-bot = bridge.Bot(command_prefix="FS!", intents=intents)
+bot = bridge.Bot(command_prefix=get_prefix, intents=intents)
+
+bot.remove_command("help")
 
 # ============================================================================== #
 
@@ -58,7 +64,7 @@ if mongo_client:
     }
 
     collection.insert_one(sample_data)
-    print("[ + ] Collection Created with Initial Structure\n")
+    print("[ + ] Collection Created with Initial Structure")
 
     collection.delete_one({"ID": 123456789012345678})
 
@@ -83,7 +89,6 @@ async def on_ready():
     print("-----------------------------------------")
     await bot.change_presence(activity=discord.Game(name="Fallener Utilities"))
 
-    bot.remove_command("help")
 
 # =============================================================================== #
 
