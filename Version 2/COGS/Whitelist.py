@@ -396,7 +396,7 @@ class Whitelist(commands.Cog):
             await error_channel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @bridge.bridge_command(
-        name="whitelist", description="Whitelist Application For Fallen SMP", aliases=["wl", "wh"]
+        name="whitelist", description="Whitelist Application For Fallen SMP", aliases=["wh"]
     )
     async def whitelist(self, ctx):
         try:
