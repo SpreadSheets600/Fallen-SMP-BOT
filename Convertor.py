@@ -1,62 +1,62 @@
 import os
-import sqlite3
 import mysql.connector as mysql
-from mysql.connector import Error
+from pymongo import MongoClient
 
-# SQLite Database Connection
-sqlite_conn = sqlite3.connect('Version 1/User.db')  # Update with your SQLite DB path
-sqlite_cursor = sqlite_conn.cursor()
+# Load environment variables
+mongo_connection_string = "NAH"
+mysql_host = "DB_HOST"
+mysql_user = "DB_USER"
+mysql_password = "DB_PASS"
+mysql_database = "DB_NAME"
 
-from dotenv import *
-load_dotenv()
+# Print environment variables for debugging (remove in production)
+print(f"Mongo URI: {mongo_connection_string}")
+print(f"MySQL Host: {mysql_host}")
+print(f"MySQL User: {mysql_user}")
 
-# MySQL Database Connection
-mysql_conn = mysql.connect(
-            host=os.getenv("DB_HOST"),
-            port=3306,
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASS"),
-            database=os.getenv("DB_NAME"),
-        )
-
-mysql_cursor = mysql_conn.cursor()
-
+# Connect to MySQL
 try:
-    # Fetch data from SQLite
-    sqlite_cursor.execute("SELECT * FROM user_data")  # Replace with your table name
-    rows = sqlite_cursor.fetchall()
+    mysql_conn = mysql.connect(
+        host=mysql_host,
+        user=mysql_user,
+        password=mysql_password,
+        database=mysql_database
+    )
+    mysql_cursor = mysql_conn.cursor(dictionary=True)
+    print("MySQL connection successful")
+except mysql.Error as e:
+    print(f"Error connecting to MySQL: {e}")
+    exit(1)
 
-    # Insert data into MySQL
-    for row in rows:
-        discord_user_id = row[1]
-        minecraft_username = row[2]
-        character_name = row[3]  # Unused in MySQL, but you might want to use it elsewhere
-        character_gender = row[4]
-        character_backstory = row[5]
-        timestamp = row[6]
+# Connect to MongoDB
+try:
+    mongo_client = MongoClient(mongo_connection_string)
+    mongo_db = mongo_client['Users']  # Change as needed
+    mongo_collection = mongo_db['UserData']  # Change as needed
+    print("MongoDB connection successful")
+except Exception as e:
+    print(f"Error connecting to MongoDB: {e}")
+    exit(1)
 
-        insert_query = """
-        INSERT INTO Users (ID, Username, Gender, Backstory, Timestamp)
-        VALUES (%s, %s, %s, %s, %s)
-        """
-        mysql_cursor.execute(insert_query, (
-            discord_user_id,
-            minecraft_username,
-            character_gender,
-            character_backstory,
-            timestamp,
-        ))
+# Fetch data from MySQL
+try:
+    mysql_cursor.execute("SELECT * FROM Users")  # Replace 'your_table' with the actual table name
+    rows = mysql_cursor.fetchall()
+    if rows:
+        mongo_collection.insert_many(rows)
+        print(f"Inserted {len(rows)} documents into MongoDB")
+    else:
+        print("No data found in MySQL")
+except mysql.Error as e:
+    print(f"Error fetching data from MySQL: {e}")
+except Exception as e:
+    print(f"Error inserting data into MongoDB: {e}")
 
-    # Commit the transaction
-    mysql_conn.commit()
-    print(f"Successfully transferred {len(rows)} records from SQLite to MySQL.")
-
-except Error as e:
-    print(f"Error occurred: {e}")
-
+# Close connections
 finally:
-    # Close connections
-    sqlite_cursor.close()
-    sqlite_conn.close()
-    mysql_cursor.close()
-    mysql_conn.close()
+    if mysql_cursor:
+        mysql_cursor.close()
+    if mysql_conn:
+        mysql_conn.close()
+    if mongo_client:
+        mongo_client.close()

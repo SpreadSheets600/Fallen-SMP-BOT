@@ -1,8 +1,10 @@
 import os
 import random
+import pymongo
 import discord
+import asyncio
 import datetime
-import mysql.connector as mysql
+from pymongo import MongoClient
 from discord.ext.pages import *
 from discord.ext.bridge import BridgeSlashGroup
 from discord.ext import commands, bridge, pages
@@ -14,6 +16,7 @@ load_dotenv()
 # =================================================================================================== #
 
 # Fixed Variables
+
 ADMINS = [
     727012870683885578,
     437622938242514945,
@@ -33,25 +36,12 @@ ERROR_CHANNEL = 1275759089024241797
 class Whitelist(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.connection, self.cursor = self.connect_to_database()
+        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.mongo_client["Users"]
+        self.collection = self.db["UserData"]
 
-    def connect_to_database(self):
-        try:
-            connection = mysql.connect(
-                host=os.getenv("DB_HOST"),
-                port=os.getenv("DB_PORT"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASS"),
-                database=os.getenv("DB_NAME"),
-            )
-
-            cursor = connection.cursor()
-            print("[ + ] Whitelist COG : Connection Established")
-            return connection, cursor
-
-        except Exception as e:
-            print(f"[ - ] Whitelist COG : Error : Connecting To Database : {e}")
-            return None, None
+        # self.bot.add_view(WhitelistButtons(user_id=0, user=None, bot=bot))
+        # self.bot.add_view(WhitelistRejectModal(bot=bot, user=None))
 
     @bridge.bridge_group()
     async def wl(self, ctx):
@@ -69,17 +59,16 @@ class Whitelist(commands.Cog):
             )
         else:
             try:
-                self.cursor.execute(
-                    "INSERT INTO Users (ID, Username, Gender, Backstory, Timestamp) VALUES (%s, %s, %s, %s, %s)",
-                    (
-                        user.id,
-                        username,
-                        gender,
-                        backstory,
-                        str(datetime.datetime.now()),
-                    ),
-                )
-                self.connection.commit()
+
+                document = {
+                    "ID": user.id,
+                    "Username": username,
+                    "Gender": gender,
+                    "Backstory": backstory,
+                    "Timestamp": datetime.datetime.now(),
+                }
+
+                self.collection.insert_one(document)
 
                 embed = discord.Embed(
                     title="User Inserted",
@@ -100,7 +89,71 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="add", description="Add a user to the whitelist")
+    @wl.command(name="search", description="Search For A User In The Whitelist")
+    async def search(self, ctx, user):
+        if ctx.author.id not in ADMINS:
+            await ctx.respond(
+                "You Do Not Have Permission To Use This Command",
+                ephemeral=True,
+                delete_after=5,
+            )
+        else:
+            try:
+                if user.isdigit():
+                    user_id = int(user)
+                    document = self.collection.find_one({"ID": user_id})
+
+                    if document:
+                        username = document.get("Username")
+
+                        embed = discord.Embed(
+                            title="User Found",
+                            description=f"User `{username}` Found In The Whitelist",
+                            color=0xD5E4CF,
+                        )
+
+                        await ctx.respond(embed=embed, ephemeral=True)
+                    else:
+                        embed = discord.Embed(
+                            title="User Not Found",
+                            description=f"No Whitelist Application Found For User ID `{user}`.",
+                            color=discord.Color.red(),
+                        )
+                        await ctx.respond(embed=embed)
+                else:
+                    document = self.collection.find_one(
+                        {"Username": {"$regex": f"^{user}$", "$options": "i"}}
+                    )
+
+                    if document:
+                        user_id = document.get("ID")
+
+                        embed = discord.Embed(
+                            title="User Found",
+                            description=f"User <@{user_id}> Found In The Whitelist",
+                            color=0xD5E4CF,
+                        )
+
+                        await ctx.respond(embed=embed, ephemeral=True)
+                    else:
+                        embed = discord.Embed(
+                            title="User Not Found",
+                            description=f"No Whitelist Application Found For Minecraft Username `{user}`.",
+                            color=discord.Color.red(),
+                        )
+                        await ctx.respond(embed=embed)
+
+            except Exception as e:
+                print(f"[ - ] Whitelist COG : Error : {e}")
+                await ctx.respond(
+                    f"[ - ] Whitelist COG : Error : \n```{e}```",
+                    ephemeral=True,
+                    delete_after=5,
+                )
+                ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
+                await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
+
+    @wl.command(name="add", description="Add A User To The Whitelist")
     async def add(self, ctx, user: discord.User):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -110,11 +163,10 @@ class Whitelist(commands.Cog):
             )
         else:
             try:
-                self.cursor.execute("SELECT * FROM Users WHERE ID = %s", (user.id,))
+                document = self.collection.find_one({"ID": user.id})
 
-                row = self.cursor.fetchone()
-                if row:
-                    username = row[1]
+                if document:
+                    username = document.get("Username")
 
                     ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                     await ConsoleChannel.send(f"whitelist add {username}")
@@ -154,7 +206,7 @@ class Whitelist(commands.Cog):
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @wl.command(name="remove", description="Remove a user from the whitelist")
+    @wl.command(name="remove", description="Remove A User From The Whitelist")
     async def remove(self, ctx, user: discord.User):
         if ctx.author.id not in ADMINS:
             await ctx.respond(
@@ -164,13 +216,14 @@ class Whitelist(commands.Cog):
             )
         else:
             try:
-                self.cursor.execute("SELECT * FROM Users WHERE ID = %s", (user.id,))
+                document = self.collection.find_one({"ID": user.id})
 
-                row = self.cursor.fetchone()
-                if row:
-                    username = row[1]
+                if document:
+                    username = document.get("Username")
 
-                    self.cursor.execute("DELETE FROM Users WHERE ID = %s", (user.id,))
+                    self.collection.delete_one({"ID": user.id})
+
+                    print(f"[ + ] Whitelist COG : User Removed : {user.id}")
 
                     ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                     await ConsoleChannel.send(f"whitelist remove {username}")
@@ -203,16 +256,21 @@ class Whitelist(commands.Cog):
 
     @wl.command(name="view", description="View A User's Whitelist Application")
     async def view(self, ctx, user: discord.User):
+
+        await ctx.defer()
+
         if user == None:
             user = ctx.author
 
         try:
-            self.cursor.execute("SELECT * FROM Users WHERE ID = %s", (user.id,))
+            # Fetch user data from MongoDB
+            document = self.collection.find_one({"ID": user.id})
 
-            row = self.cursor.fetchone()
-
-            if row:
-                username = row[1]
+            if document:
+                username = document.get("Username")
+                gender = document.get("Gender")
+                backstory = document.get("Backstory")
+                timestamp = document.get("Timestamp")
 
                 embed = discord.Embed(
                     title="Player Information",
@@ -222,11 +280,11 @@ class Whitelist(commands.Cog):
 
                 embed.add_field(
                     name="Discord User ID",
-                    value=f"{row[0]}",
+                    value=f"{document['ID']}",
                     inline=False,
                 )
 
-                embed.add_field(name="Minecraft Username", value=row[1], inline=False)
+                embed.add_field(name="Minecraft Username", value=username, inline=False)
 
                 try:
                     avatar = user.avatar.url
@@ -234,11 +292,15 @@ class Whitelist(commands.Cog):
                 except Exception as e:
                     pass
 
-                embed.set_footer(text=f"Fallen SMP | Joined On {row[4].split(' ')[0]}")
+                embed.set_footer(
+                    text=f"Fallen SMP | Joined On {timestamp.split(' ')[0]}"
+                )
 
                 await ctx.respond(
                     embed=embed,
-                    view=View_Character_Info(user_id=user.id, user=user),
+                    view=View_Character_Info(
+                        user_id=user.id, user=user, gender=gender, backstory=backstory
+                    ),
                 )
 
             else:
@@ -263,8 +325,7 @@ class Whitelist(commands.Cog):
     @wl.command(name="list", description="List All Whitelist Applications")
     async def list(self, ctx):
         try:
-            self.cursor.execute("SELECT * FROM Users")
-            rows = self.cursor.fetchall()
+            rows = list(self.collection.find())
 
             if not rows:
                 await ctx.respond("No Whitelist Applications Found", ephemeral=True)
@@ -278,8 +339,8 @@ class Whitelist(commands.Cog):
                 embed = discord.Embed(title="Whitelisted Members", color=0xC8E7E2)
 
                 for index, member in enumerate(members_on_page, start=i + 1):
-                    user_id = member[0]
-                    username = member[1]
+                    user_id = member.get("ID")
+                    username = member.get("Username")
 
                     embed.add_field(
                         name=f"{index}. {username}",
@@ -339,12 +400,9 @@ class Whitelist(commands.Cog):
     )
     async def whitelist(self, ctx):
         try:
-            cursor = self.connection.cursor()
-            cursor.execute("SELECT * FROM Users WHERE ID = %s", (ctx.author.id,))
+            document = self.collection.find_one({"ID": ctx.author.id})
 
-            row = cursor.fetchone()
-
-            if row:
+            if document:
                 embed = discord.Embed(
                     title="Application Already Submitted",
                     description="You Are Already WhiteListed. \nIf You Want To Update Your Application, Contact The Admins.",
@@ -405,18 +463,30 @@ class WhitelistApplication(discord.ui.View):
     async def whitelist_form(self, button, interaction):
 
         if interaction.user.id != self.interaction_user.id:
-            await interaction.response.send_message(
+
+            await interaction.resonse.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
+            message_id = interaction.message.id
+
+            button.disabled = True
+            await interaction.followup.edit_message(message_id=message_id, view=self)
+
         else:
+
             await interaction.response.send_modal(
                 WhitelistModal(
                     title="Fallen SMP Whitelist Form",
-                    bot=self.bot,
                     user=self.interaction_user,
+                    bot=self.bot,
                 )
             )
+
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            await interaction.followup.edit_message(message_id=message_id, view=self)
 
 
 # =================================================================================================== #
@@ -428,11 +498,15 @@ class WhitelistModal(discord.ui.Modal):
         self.user = user
         self.bot = bot
 
+        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.mongo_client["Users"]
+        self.collection = self.db["UserData"]
+
         self.qna = {
             "Role Earned by Killing Player Unwilling": "outlaw",
             "Where Is PVP Allowed": "pvp arena",
             "Can I Build Without Permission": "no",
-            "Whom To Ask Permission From Before Building": ["duke", "admin"],
+            "Whom To Ask Permission From Before Building": "duke",
             "Who Has The Ultimate Authority": "emperor",
         }
 
@@ -469,16 +543,10 @@ class WhitelistModal(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        connection = mysql.connect(
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASS"),
-            database=os.getenv("DB_NAME"),
-        )
+
+        await interaction.response.defer(ephemeral=True)
 
         try:
-            cursor = connection.cursor()
 
             character_backstory = self.children[2].value
             agree_backstory = self.children[3].value
@@ -492,7 +560,7 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 await interaction.user.send(embed=embed)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
@@ -507,7 +575,7 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 await interaction.user.send(embed=embed)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
@@ -522,14 +590,14 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 await interaction.user.send(embed=embed)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
                 )
                 return
 
-            if len(character_backstory) < 100 and self.user.id not in ADMINS:
+            if len(character_backstory) < 100:
                 embed = discord.Embed(
                     title="Whitelist Form Not Submitted",
                     description="### Character Backstory Too Short\nCharacter Backstory Should Be Above 100 Characters",
@@ -537,55 +605,52 @@ class WhitelistModal(discord.ui.Modal):
                 )
 
                 await interaction.user.send(embed=embed)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"<@{interaction.user.id}>",
                     embed=embed,
                     ephemeral=True,
                 )
                 return
 
-            cursor.execute(
-                "INSERT INTO Users ( ID, Username, Gender, Backstory, Timestamp ) VALUES ( %s, %s, %s, %s, %s )",
-                (
-                    interaction.user.id,
-                    self.children[0].value,
-                    self.children[1].value,
-                    self.children[2].value,
-                    str(datetime.datetime.now()),
-                ),
-            )
-
-            connection.commit()
-
             print(f"[ + ] Whitelist COG : User Inserted : {interaction.user.id}")
 
             embed = discord.Embed(
                 title="Whitelist Form Submitted",
-                description="### Your Whitelist Application Has Been Submitted",
+                description="### Your Whitelist Application Has Been Submitted\nPlease Wait For The Admins To Review Your Application",
                 color=0x99B9B3,
             )
 
             try:
-                await interaction.user.send(embed=embed)
+                user = self.bot.get_user(interaction.user.id)
+                await user.send(embed=embed)
             except Exception as e:
-                pass
+                print(f"[ - ] Whitelist COG : Error : {e}")
 
-            await interaction.response.send_message(
-                f"<@{interaction.user.id}>",
+            await interaction.followup.send(
                 embed=embed,
                 ephemeral=True,
             )
 
             embed = discord.Embed(
-                title=f"Whitelist Application From {interaction.user.display_name}({interaction.user.id})",
-                description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\nCharacter Backstory : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\n{self.ques} : {answer}",
+                title=f"Whitelist Application From {interaction.user.display_name} ({interaction.user.id})",
+                description=f"Username : {self.children[0].value}\nCharacter Gender : {self.children[1].value}\n\n**Character Backstory** : {character_backstory}\n\nAgree To Follow Backstory : {agree_backstory}\n{self.ques} : {answer}",
                 color=0x99B9B3,
             )
 
             WhitelistChannel = self.bot.get_channel(WHITELIST_CHANNEL)
             await WhitelistChannel.send(
                 embed=embed,
-                view=WhitelistButtons(interaction.user.id, self.user, self.bot),
+                view=WhitelistButtons(interaction.user.id, self.user, main_embed=embed),
+            )
+
+            self.collection.insert_one(
+                {
+                    "ID": interaction.user.id,
+                    "Username": self.children[0].value,
+                    "Gender": self.children[1].value,
+                    "Backstory": character_backstory,
+                    "Timestamp": datetime.datetime.now().isoformat(),
+                }
             )
 
         except Exception as e:
@@ -599,13 +664,21 @@ class WhitelistModal(discord.ui.Modal):
 
 
 class WhitelistButtons(discord.ui.View):
-    def __init__(self, user_id, user, bot) -> None:
+    def __init__(
+        self, user_id: int = None, user: discord.Member = None, main_embed=None
+    ):
         super().__init__(timeout=None)
+        self.main_embed = main_embed
         self.user_id = user_id
         self.user = user
-        self.bot = bot
 
-    @discord.ui.button(label="Accept", style=discord.ButtonStyle.success)
+        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.mongo_client["Users"]
+        self.collection = self.db["UserData"]
+
+    @discord.ui.button(
+        label="Accept", custom_id="accept", style=discord.ButtonStyle.success
+    )
     async def accept_button_callback(self, button, interaction):
 
         if interaction.user.id not in ADMINS:
@@ -615,21 +688,10 @@ class WhitelistButtons(discord.ui.View):
 
         else:
 
-            connection = mysql.connect(
-                host=os.getenv("DB_HOST"),
-                port=os.getenv("DB_PORT"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASS"),
-                database=os.getenv("DB_NAME"),
-            )
+            document = self.collection.find_one({"ID": self.user_id})
 
-            cursor = connection.cursor()
-            cursor.execute("SELECT * FROM Users WHERE ID = %s", (self.user_id,))
-
-            row = cursor.fetchone()
-
-            if row:
-                username = row[1]
+            if document:
+                username = document.get("Username")
 
                 ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                 await ConsoleChannel.send(f"whitelist add {self.user}")
@@ -654,6 +716,21 @@ class WhitelistButtons(discord.ui.View):
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
+                message_id = interaction.message.id
+
+                self.disable_all_items()
+                button.style = discord.ButtonStyle.secondary
+
+                self.main_embed.add_field(
+                    name="Whitelist Accepted By",
+                    value=f"{interaction.user.display_name}",
+                    inline=False,
+                )
+
+                await interaction.followup.edit_message(
+                    embed=self.main_embed, message_id=message_id, view=self
+                )
+
             else:
                 embed = discord.Embed(
                     title="User Not Found",
@@ -662,7 +739,22 @@ class WhitelistButtons(discord.ui.View):
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="Reject", style=discord.ButtonStyle.danger)
+                message_id = interaction.message.id
+
+                self.disable_all_items()
+                button.style = discord.ButtonStyle.secondary
+
+                self.main_embed.add_field(
+                    name="ERROR", value="User Not Found", inline=False
+                )
+
+                await interaction.followup.edit_message(
+                    embed=self.main_embed, message_id=message_id, view=self
+                )
+
+    @discord.ui.button(
+        label="Reject", custom_id="reject", style=discord.ButtonStyle.danger
+    )
     async def reject_button_callback(self, button, interaction):
 
         if interaction.user.id not in ADMINS:
@@ -670,24 +762,62 @@ class WhitelistButtons(discord.ui.View):
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+            await interaction.followup.edit_message(message_id=message_id, view=self)
+
         else:
             await interaction.response.send_modal(
-                WhitelsitRejectModal(
-                    title="Whitelist Application Rejection",
+                WhitelistRejectModal(
+                    main_embed=self.main_embed,
+                    mgs_id=interaction.message.id,
                     user=self.user,
                     bot=self.bot,
                 )
+            )
+
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+
+            self.main_embed.add_field(
+                name="Whitelist Rejected By",
+                value=f"{interaction.user.display_name}",
+                inline=False,
+            )
+
+            self.main_embed.color = discord.Color.red()
+
+            await interaction.followup.edit_message(
+                embed=self.main_embed, message_id=message_id, view=self
             )
 
 
 # =================================================================================================== #
 
 
-class WhitelsitRejectModal(discord.ui.Modal):
-    def __init__(self, bot, user, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.bot = bot
+class WhitelistRejectModal(discord.ui.Modal):
+    def __init__(
+        self,
+        user: discord.Member,
+        bot: commands.Bot,
+        main_embed,
+        mgs_id,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(title="Whitelist Application Rejection")
+        self.main_embed = main_embed
+        self.msg_id = mgs_id
         self.user = user
+        self.bot = bot
+
+        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.mongo_client["Users"]
+        self.collection = self.db["UserData"]
 
         self.add_item(
             discord.ui.InputText(
@@ -698,68 +828,79 @@ class WhitelsitRejectModal(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-
         embed = discord.Embed(
             title="Whitelist Application Rejected",
-            description="### Your Whitelist Application Has Been Rejected",
-            color=0xFBEADC,
-        )
-
-        reason = self.children[0].value
-
-        embed.add_field(
-            name="Reason For Rejection",
-            value=reason,
-            inline=False,
+            description=f"Your whitelist application has been rejected.\n**Reason:** {self.children[0].value}",
+            color=discord.Color.red(),
         )
 
         try:
-            await interaction.user.send(embed=embed)
+            await self.user.send(embed=embed)
+
         except Exception as e:
             pass
 
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
+        embed = discord.Embed(
+            title="Whitelist Application Rejected",
+            description=f"Whitelist Application Rejected For {self.user.display_name}",
+            color=discord.Color.red(),
         )
+
+        embed.add_field(
+            name="Reason For Rejection", value=self.children[0].value, inline=False
+        )
+
+        document = self.collection.find_one({"ID": self.user.id})
+
+        if document:
+            username = document.get("Username")
+
+            self.collection.delete_one({"ID": self.user.id})
+
+            ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
+            await ConsoleChannel.send(f"whitelist remove {username}")
+
+            self.collection.delete_one({"ID": self.user.id})
+
+            print(f"[ + ] Whitelist COG : User Removed : {self.user.id}")
+
+        await interaction.respond(embed=embed)
 
 
 # =================================================================================================== #
 
 
 class View_Character_Info(discord.ui.View):
-    def __init__(self, user_id, user) -> None:
+    def __init__(self, user_id, user, gender, backstory) -> None:
         super().__init__(timeout=None)
+        self.backstory = backstory
         self.user_id = user_id
+        self.gender = gender
         self.user = user
+
+        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        self.db = self.mongo_client["Users"]
+        self.collection = self.db["UserData"]
 
     @discord.ui.button(label="View Character Info", style=discord.ButtonStyle.secondary)
     async def view_button_callback(self, button, interaction):
 
-        connection = mysql.connect(
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASS"),
-            database=os.getenv("DB_NAME"),
+        embed = discord.Embed(
+            title="Character Information",
+            description=f"Character Gender : **{self.gender}**\n\n**Character Backstory** : **{self.backstory}**",
         )
 
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM Users WHERE ID = %s", (self.user_id,))
-
-        row = cursor.fetchone()
-
-        if row:
-            embed = discord.Embed(
-                title="Character Information",
-                description=f"Character Gender : **{row[2]}**\n\nCharacter Backstory : **{row[3]}**",
-            )
-
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 # =================================================================================================== #
 
 
-def setup(bot: commands.Bot):
+@commands.Cog.listener()
+async def on_ready(self):
+    await self.bot.add_view(WhitelistButtons())
+    await self.bot.add_view(WhitelistRejectModal())
+
+
+def setup(bot):
     bot.add_cog(Whitelist(bot))

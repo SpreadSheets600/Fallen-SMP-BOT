@@ -4,15 +4,21 @@ import aiohttp
 import datetime
 
 import discord
+import COGS.Whitelist
+from COGS.Whitelist import *
 from discord.ext import commands, bridge
 from discord.commands import SlashCommandGroup
 
 import mysql.connector as mysql
 from mysql.connector import Error
 
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
+
 # =================================================================================================== #
 
 from dotenv import *
+
 load_dotenv()
 
 print("[ + ] Environment Variables Loaded")
@@ -26,32 +32,37 @@ bot = bridge.Bot(command_prefix="FS!", intents=intents)
 
 # Database Connection
 
-
-def connect_to_database():
+def connect_to_mongodb():
     try:
-        connection = mysql.connect(
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASS"),
-            database=os.getenv("DB_NAME"),
-        )
-        cursor = connection.cursor()
-        print("[ + ] Database Connection Established")
-        return connection, cursor
-    except Error as e:
-        print(f"[ - ] Error Connecting to Database: {e}")
-        return None, None
+        mongo_client = MongoClient(os.getenv("MONGO_URI"))
+        mongo_client.admin.command("ping")
+        print("[ + ] MongoDB Connection Established")
+        return mongo_client
+    except ConnectionFailure as e:
+        print(f"[ - ] Error Connecting to MongoDB: {e}")
+        return None
 
 
-connection, cursor = connect_to_database()
+mongo_client = connect_to_mongodb()
 
-if connection and cursor:
-    cursor.execute(
-        "CREATE TABLE IF NOT EXISTS Users (ID BIGINT PRIMARY KEY, Username VARCHAR(25), Gender VARCHAR(10), Backstory TEXT, Timestamp VARCHAR(225))"
-    )
-    connection.commit()
-    print("[ + ] Tables Created")
+if mongo_client:
+    db = mongo_client["Users"]
+    collection = db["UserData"]
+
+    sample_data = {
+        "ID": 123456789012345678,
+        "Username": "SampleUser",
+        "Gender": "Male",
+        "Backstory": "This is a sample backstory.",
+        "Timestamp": "2024-08-22T12:00:00Z",
+    }
+
+    collection.insert_one(sample_data)
+    print("[ + ] Collection Created with Initial Structure\n")
+
+    collection.delete_one({"ID": 123456789012345678})
+
+    print("[ + ] Sample Document Removed\n")
 
 # =============================================================================== #
 
@@ -65,9 +76,6 @@ async def on_ready():
     bot.start_time = start_time
     bot.up_time = up_time
 
-    bot.connection = connection
-    bot.cursor = cursor
-
     print("-----------------------------------------")
     print(f"[ + ] Fallener Utilities")
     print(f"[ + ] BOT ID : {bot.user.id}")
@@ -75,6 +83,7 @@ async def on_ready():
     print("-----------------------------------------")
     await bot.change_presence(activity=discord.Game(name="Fallener Utilities"))
 
+    bot.remove_command("help")
 
 # =============================================================================== #
 
@@ -130,6 +139,13 @@ async def info(ctx: discord.ApplicationContext):
     embed.set_thumbnail(url=bot.user.avatar.url)
     await ctx.respond(embed=embed)
 
+
+@bot.bridge_command(
+    name="help",
+    description="Get Commands List",
+)
+async def help(ctx: discord.ApplicationContext):
+    await ctx.respond("SOHAM Hasn't Finished Writing This Yet")
 
 # =============================================================================== #
 
