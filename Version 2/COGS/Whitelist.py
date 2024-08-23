@@ -27,6 +27,12 @@ ADMINS = [
     896411007797325824,
 ]
 
+MODS = [
+    1273283762624663625,
+    1261684685235294250,
+    1147935418508132423,
+]
+
 WHITELIST_CHANNEL = 1267512076222595122
 CONSOLE_CHANNEL = 1263898954999922720
 ERROR_CHANNEL = 1275759089024241797
@@ -166,7 +172,7 @@ class Whitelist(commands.Cog):
 
     @wl.command(name="add", description="Add A User To The Whitelist")
     async def add(self, ctx, user: discord.User):
-        if ctx.author.id not in ADMINS:
+        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
                 ephemeral=True,
@@ -229,7 +235,7 @@ class Whitelist(commands.Cog):
         aliases=["r", "del"],
     )
     async def remove(self, ctx, user: discord.User):
-        if ctx.author.id not in ADMINS:
+        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
                 ephemeral=True,
@@ -438,7 +444,6 @@ class Whitelist(commands.Cog):
 
                 await ctx.respond(embed=embed, ephemeral=True)
 
-
             elif document:
                 embed = discord.Embed(
                     title="Application Already Submitted",
@@ -496,7 +501,7 @@ class Whitelist(commands.Cog):
             color=0x2F3136,
         )
 
-        await ctx.respond(embed=embed, view=Guide_Menu())
+        await ctx.respond(embed=embed, view=GuideMenu())
 
     @bridge.bridge_command(
         name="rules",
@@ -571,10 +576,10 @@ class WhitelistApplication(discord.ui.View):
             )
 
             await interaction.response.send_message(
-                embed=embed, ephemeral=True, view=Guide_Menu()
+                embed=embed, ephemeral=True, view=GuideMenu()
             )
 
-    @discord.ui.button(label="Rule", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Rules", style=discord.ButtonStyle.secondary)
     async def rule_button_callback(self, button, interaction):
 
         if interaction.user.id != self.interaction_user.id:
@@ -637,29 +642,25 @@ class WhitelistApplication(discord.ui.View):
 
             message_id = interaction.message.id
 
-            self.disable_all_items()
             await interaction.followup.edit_message(message_id=message_id, view=self)
 
 
 # =================================================================================================== #
-class Guide_Menu(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
+class GuideMenu(discord.ui.View):
     @discord.ui.select(
         placeholder="Guide Menu",
         min_values=1,
         max_values=1,
         options=[
             discord.SelectOption(
-                label="- Basic Roles Info", description="Learn About Server Roles"
+                label="Basic Roles Info", description="Learn About Server Roles"
             ),
             discord.SelectOption(
-                label="- How To Get Whitelisted",
+                label="How To Get Whitelisted",
                 description="Learn About Whitelisting Process",
             ),
             discord.SelectOption(
-                label="- How To Write A Backstory",
+                label="How To Write A Backstory",
                 description="Learn About Writing Character Backstory",
             ),
         ],
@@ -822,9 +823,9 @@ class WhitelistModal(discord.ui.Modal):
 
         self.qna = {
             "Role Earned by Killing Player Unwilling": "outlaw",
-            "Where Is PVP Allowed": "pvp arena",
+            "Where Is PVP Allowed": ["pvp arena", "arena"],
             "Can I Build Without Permission": "no",
-            "Whom To Ask Permission From Before Building": "duke",
+            "Whom To Ask Permission From Before Building": ["duke", "admin"],
             "Who Has The Ultimate Authority": "emperor",
         }
 
@@ -885,7 +886,7 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            if answer.lower() != self.qna[self.ques]:
+            if answer != self.qna[self.ques]:
                 embed = discord.Embed(
                     title="Whitelist Form Not Submitted",
                     description="### Incorrect Answer\nYou Must Answer The Question Correctly",
@@ -957,7 +958,7 @@ class WhitelistModal(discord.ui.Modal):
 
             WhitelistChannel = self.bot.get_channel(WHITELIST_CHANNEL)
             await WhitelistChannel.send(
-                "<@727012870683885578> <@1188730953217097811> <@664157606587138048> <@1267510397494362216> <@437622938242514945>",
+                "<@727012870683885578> <@1188730953217097811> <@664157606587138048> <@896411007797325824> <@437622938242514945> <@1147935418508132423> <@1261684685235294250> <@1273283762624663625>",
                 embed=embed,
                 view=WhitelistButtons(
                     interaction.user.id, self.user, self.bot, main_embed=embed
@@ -1007,7 +1008,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def accept_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS:
+        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
@@ -1020,7 +1021,7 @@ class WhitelistButtons(discord.ui.View):
                 username = document.get("Username")
 
                 ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
-                await ConsoleChannel.send(f"whitelist add {self.user}")
+                await ConsoleChannel.send(f"whitelist add {username}")
 
                 embed = discord.Embed(
                     title="User Whitelisted",
@@ -1083,7 +1084,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def reject_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS:
+        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
@@ -1106,9 +1107,6 @@ class WhitelistButtons(discord.ui.View):
 
             message_id = interaction.message.id
 
-            self.disable_all_items()
-            button.style = discord.ButtonStyle.secondary
-
             self.main_embed.add_field(
                 name="Whitelist Rejected By",
                 value=f"{interaction.user.display_name}",
@@ -1116,6 +1114,9 @@ class WhitelistButtons(discord.ui.View):
             )
 
             self.main_embed.color = discord.Color.red()
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
 
             await interaction.followup.edit_message(
                 embed=self.main_embed, message_id=message_id, view=self
@@ -1126,7 +1127,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def block_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS:
+        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
@@ -1135,6 +1136,7 @@ class WhitelistButtons(discord.ui.View):
 
             self.disable_all_items()
             button.style = discord.ButtonStyle.secondary
+
             await interaction.followup.edit_message(message_id=message_id, view=self)
 
         else:
