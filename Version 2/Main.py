@@ -4,7 +4,9 @@ import aiohttp
 import datetime
 
 import discord
+import COGS.Player
 import COGS.Whitelist
+from COGS.Player import *
 from COGS.Whitelist import *
 from discord.ext import commands, bridge
 from discord.commands import SlashCommandGroup
@@ -25,9 +27,21 @@ print("[ + ] Environment Variables Loaded")
 
 # =================================================================================================== #
 
+
+class MyBot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.player_cog = None
+
+    async def setup_hook(self):
+        self.player_cog = Player(self)
+        await self.add_cog(self.player_cog)
+
+
 def get_prefix(bot, message):
     prefixes = ["FS!", "fs!"]
     return commands.when_mentioned_or(*prefixes)(bot, message)
+
 
 intents = discord.Intents.all()
 bot = bridge.Bot(command_prefix=get_prefix, intents=intents)
@@ -37,6 +51,7 @@ bot.remove_command("help")
 # ============================================================================== #
 
 # Database Connection
+
 
 def connect_to_mongodb():
     try:
@@ -152,15 +167,56 @@ async def info(ctx: discord.ApplicationContext):
 async def help(ctx: discord.ApplicationContext):
     await ctx.respond("SOHAM Hasn't Finished Writing This Yet")
 
+
+@bot.event
+async def on_slash_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandOnCooldown):
+        await ctx.respond(
+            f"This Command Is On Cooldown. Try Again In {error.retry_after:.2f} Seconds"
+        )
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.respond("You Are Missing Required Arguments")
+    elif isinstance(error, commands.errors.BadArgument):
+        await ctx.respond("Bad Argument Provided")
+    elif isinstance(error, commands.errors.CommandInvokeError):
+        await ctx.respond("An Error Occurred While Executing The Command")
+    elif isinstance(error, commands.errors.CommandNotFound):
+        await ctx.respond("Command Not Found")
+    elif isinstance(error, commands.errors.CheckFailure):
+        await ctx.respond("You Do Not Have Permission To Use This Command")
+    else:
+        await ctx.respond("An Error Occurred")
+
+
+@bot.event
+async def on_bridge_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandOnCooldown):
+        await ctx.respond(
+            f"This Command Is On Cooldown. Try Again In {error.retry_after:.2f} Seconds"
+        )
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        await ctx.respond("You Are Missing Required Arguments")
+    elif isinstance(error, commands.errors.BadArgument):
+        await ctx.respond("Bad Argument Provided")
+    elif isinstance(error, commands.errors.CommandInvokeError):
+        await ctx.respond("An Error Occurred While Executing The Command")
+    elif isinstance(error, commands.errors.CommandNotFound):
+        await ctx.respond("Command Not Found")
+    elif isinstance(error, commands.errors.CheckFailure):
+        await ctx.respond("You Do Not Have Permission To Use This Command")
+    else:
+        await ctx.respond("An Error Occurred")
+
 # =============================================================================== #
 
 # Initialisation COGS
 
 try:
     bot.load_extension("COGS.Whitelist")
-    print("[ + ] Whitelist COG Loaded")
+    bot.load_extension("COGS.Player")
+    print("[ + ] COGs Loaded")
 except Exception as e:
-    print(f"[ - ] Failed to load Whitelist COG: {e}")
+    print(f"[ - ] Failed To Load COGs : {e}")
 
 # =============================================================================== #
 

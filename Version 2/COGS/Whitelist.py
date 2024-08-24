@@ -11,7 +11,6 @@ from discord.ext.bridge import BridgeSlashGroup
 from discord.ext import commands, bridge, pages
 
 from dotenv import *
-
 load_dotenv()
 
 # =================================================================================================== #
@@ -280,73 +279,6 @@ class Whitelist(commands.Cog):
 
                 ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
                 await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
-
-    @wl.command(name="view", description="View A User's Whitelist Application")
-    async def view(self, ctx, user: discord.User):
-
-        await ctx.defer()
-
-        if user == None:
-            user = ctx.author
-
-        try:
-            document = self.collection.find_one({"ID": user.id})
-
-            if document:
-                username = document.get("Username")
-                gender = document.get("Gender")
-                backstory = document.get("Backstory")
-                timestamp = document.get("Timestamp")
-
-                embed = discord.Embed(
-                    title="Player Information",
-                    description=f"Details For **{user.display_name}**",
-                    color=0xDDDDBD,
-                )
-
-                embed.add_field(
-                    name="Discord User ID",
-                    value=f"{document['ID']}",
-                    inline=False,
-                )
-
-                embed.add_field(name="Minecraft Username", value=username, inline=False)
-
-                try:
-                    avatar = user.avatar.url
-                    embed.set_thumbnail(url=user.avatar.url)
-                except Exception as e:
-                    pass
-
-                embed.set_footer(
-                    text=f"Fallen SMP | Joined On {timestamp.split(' ')[0]}"
-                )
-
-                await ctx.respond(
-                    embed=embed,
-                    view=View_Character_Info(
-                        user_id=user.id, user=user, gender=gender, backstory=backstory
-                    ),
-                )
-
-            else:
-                embed = discord.Embed(
-                    title=":x: Player Data Not Found",
-                    description="It Seems Like There Isn't Any Data For You. Make Sure To Submit The Whitelist Application.",
-                    color=discord.Color.red(),
-                )
-                await ctx.respond(embed=embed, ephemeral=True)
-
-        except Exception as e:
-            print(f"[ - ] Whitelist COG : Error : {e}")
-            await ctx.respond(
-                f"[ - ] Whitelist COG : Error : \n```{e}```",
-                ephemeral=True,
-                delete_after=5,
-            )
-
-            ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
-            await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @wl.command(name="list", description="List All Whitelist Applications")
     async def list(self, ctx):
@@ -1258,35 +1190,6 @@ class WhitelistRejectModal(discord.ui.Modal):
             print(f"[ + ] Whitelist COG : User Removed : {self.user.id}")
 
         await interaction.respond(embed=embed)
-
-
-# =================================================================================================== #
-
-
-class View_Character_Info(discord.ui.View):
-    def __init__(self, user_id, user, gender, backstory) -> None:
-        super().__init__(timeout=None)
-        self.backstory = backstory
-        self.user_id = user_id
-        self.gender = gender
-        self.user = user
-
-        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
-        self.db = self.mongo_client["Users"]
-        self.collection = self.db["UserData"]
-
-    @discord.ui.button(label="View Character Info", style=discord.ButtonStyle.secondary)
-    async def view_button_callback(self, button, interaction):
-
-        embed = discord.Embed(
-            title="Character Information",
-            description=f"Character Gender : **{self.gender}**\n\n**Character Backstory** : **{self.backstory}**",
-        )
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-
-
-# =================================================================================================== #
 
 
 @commands.Cog.listener()
