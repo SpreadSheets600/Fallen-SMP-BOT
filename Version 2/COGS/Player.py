@@ -162,6 +162,7 @@ class Player(commands.Cog):
             player = ctx.author
 
         def convert_time(seconds):
+            seconds = seconds // 60
             minutes = seconds // 60
             hours = minutes // 60
             days = hours // 24
