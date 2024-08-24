@@ -11,6 +11,7 @@ from discord.ext.bridge import BridgeSlashGroup
 from discord.ext import commands, bridge, pages
 
 from dotenv import *
+
 load_dotenv()
 
 # =================================================================================================== #
@@ -171,7 +172,7 @@ class Whitelist(commands.Cog):
 
     @wl.command(name="add", description="Add A User To The Whitelist")
     async def add(self, ctx, user: discord.User):
-        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
+        if ctx.author.id not in ADMINS and ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
                 ephemeral=True,
@@ -234,7 +235,7 @@ class Whitelist(commands.Cog):
         aliases=["r", "del"],
     )
     async def remove(self, ctx, user: discord.User):
-        if ctx.author.id not in ADMINS or ctx.author.id not in MODS:
+        if ctx.author.id not in ADMINS and ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
                 ephemeral=True,
@@ -574,6 +575,7 @@ class WhitelistApplication(discord.ui.View):
 
             message_id = interaction.message.id
 
+            button.disabled = True
             await interaction.followup.edit_message(message_id=message_id, view=self)
 
 
@@ -818,7 +820,7 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            if answer != self.qna[self.ques]:
+            if answer.lower() not in self.qna[self.ques]:
                 embed = discord.Embed(
                     title="Whitelist Form Not Submitted",
                     description="### Incorrect Answer\nYou Must Answer The Question Correctly",
@@ -940,7 +942,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def accept_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
+        if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
@@ -1016,7 +1018,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def reject_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
+        if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
@@ -1059,7 +1061,7 @@ class WhitelistButtons(discord.ui.View):
     )
     async def block_button_callback(self, button, interaction):
 
-        if interaction.user.id not in ADMINS or interaction.user.id not in MODS:
+        if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )

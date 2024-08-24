@@ -1,13 +1,13 @@
 import os
 import time
 import aiohttp
-import datetime
 
 import discord
 import COGS.Player
 import COGS.Whitelist
 from COGS.Player import *
 from COGS.Whitelist import *
+from datetime import datetime, timedelta
 from discord.ext import commands, bridge
 from discord.commands import SlashCommandGroup
 
@@ -92,8 +92,8 @@ if mongo_client:
 
 @bot.event
 async def on_ready():
-    start_time = str(datetime.datetime.now()).split(" ")[1]
-    up_time = datetime.datetime.now()
+    start_time = str(datetime.now().strftime("%H:%M:%S"))
+    up_time = datetime.now()
     bot.start_time = start_time
     bot.up_time = up_time
 
