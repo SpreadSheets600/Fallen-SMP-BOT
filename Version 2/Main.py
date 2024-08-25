@@ -85,6 +85,41 @@ if mongo_client:
 
     print("[ + ] Sample Document Removed\n")
 
+    db = mongo_client["Users"]
+    collection = db["UserStocks"]
+
+    sample_data = {
+        "ID": 123456789012345678,
+        "StocksAmount": {"AMD": 0,"INTC": 0, "MSFT": 0, "AAPL": 0, "GOOGL": 0},
+        "StocksBuyPrice": {"AMD_P": 0,"INTC_P": 0, "MSFT_p": 0, "AAPL_P": 0, "GOOGL_p": 0},
+        "Timestamp": "2024-08-22T12:00:00Z",
+    }
+
+    collection.insert_one(sample_data)
+    print("[ + ] Collection Created with Initial Structure")
+
+    collection.delete_one({"ID": 123456789012345678})
+
+    print("[ + ] Sample Document Removed\n")
+
+    db = mongo_client["Users"]
+    collection = db["UserCrypto"]
+
+    sample_data = {
+        "ID": 123456789012345678,
+        "CryptoAmount": {"BTC": 0,"ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
+        "CryptoBuyPrice": {"BTC_P": 0,"ETH_P": 0, "BNB_P": 0, "SOL_P": 0, "AVAX_P": 0},
+        "Timestamp": "2024-08-22T12:00:00Z",
+    }
+
+    collection.insert_one(sample_data)
+    print("[ + ] Collection Created with Initial Structure")
+
+    collection.delete_one({"ID": 123456789012345678})
+
+    print("[ + ] Sample Document Removed\n")
+    
+
 # =============================================================================== #
 
 # Bot Events
