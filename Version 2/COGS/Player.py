@@ -141,7 +141,7 @@ class Player(commands.Cog):
                 await ctx.respond(embed=embed, ephemeral=True)
 
         except Exception as e:
-            print(f"[ - ] Player COG : Error : {e}")
+            # print(f"[ - ] Player COG : Error : {e}")
             await ctx.respond(
                 f"[ - ] Player COG : Error : \n```{e}```",
                 ephemeral=True,
@@ -150,6 +150,8 @@ class Player(commands.Cog):
 
             ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
             await ErrorChannel.send(f"[ - ] Player COG : Error : \n```{e}```")
+
+            traceback.print_exc()
 
     @pl.command(
         name="stats",
@@ -307,7 +309,7 @@ class Player(commands.Cog):
                 await ctx.respond(embed=embed, ephemeral=True)
 
         except Exception as e:
-            print(f"[ - ] Player COG : Error : {e}")
+            # print(f"[ - ] Player COG : Error : {e}")
             await ctx.respond(
                 f"[ - ] Player COG : Error : \n```{e}```",
                 ephemeral=True,
@@ -453,8 +455,6 @@ class Additional_Statisitcs(discord.ui.View):
                 "Timeout : No Response Received.", ephemeral=True
             )
             return
-
-        print(message.content)
 
         if message.content:
 

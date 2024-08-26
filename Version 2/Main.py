@@ -249,6 +249,7 @@ async def on_bridge_command_error(ctx, error):
 try:
     bot.load_extension("COGS.Whitelist")
     bot.load_extension("COGS.Player")
+    bot.load_extension("COGS.Status")
     print("[ + ] COGs Loaded")
 except Exception as e:
     print(f"[ - ] Failed To Load COGs : {e}")
