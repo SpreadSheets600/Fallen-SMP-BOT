@@ -44,23 +44,23 @@ ERROR_CHANNEL = 1275759089024241797
 # =================================================================================================== #
 
 
-def database_connection():
-    try:
-        connection = mysql.connect(
-            host=os.getenv("STATZ_DB_HOST"),
-            user=os.getenv("STATZ_DB_USER"),
-            password=os.getenv("STATZ_DB_PASS"),
-            database=os.getenv("STATZ_DB_NAME"),
-        )
-        print("[ + ] MySQL Connection Established")
+# def database_connection():
+#     try:
+#         connection = mysql.connect(
+#             host=os.getenv("STATZ_DB_HOST"),
+#             user=os.getenv("STATZ_DB_USER"),
+#             password=os.getenv("STATZ_DB_PASS"),
+#             database=os.getenv("STATZ_DB_NAME"),
+#         )
+#         print("[ + ] MySQL Connection Established")
 
-        cursor = connection.cursor()
+#         cursor = connection.cursor()
 
-        return connection, cursor
+#         return connection, cursor
 
-    except Error as e:
-        print(f"[ - ] Error Connecting To MySQL: {e}")
-        return None
+#     except Error as e:
+#         print(f"[ - ] Error Connecting To MySQL: {e}")
+#         return None
 
 
 # =================================================================================================== #
@@ -69,7 +69,7 @@ def database_connection():
 class Player(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.connection, self.cursor = database_connection()
+        # self.connection, self.cursor = database_connection()
 
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
@@ -183,11 +183,31 @@ class Player(commands.Cog):
                 ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                 await ConsoleChannel.send(f"zstats update {username}")
 
-                get_uuid = f"SELECT uuid FROM player WHERE name = '{username}'"
-                self.cursor.execute(get_uuid)
+                try :
+                    connection = mysql.connect(
+                        host=os.getenv("STATZ_DB_HOST"),
+                        user=os.getenv("STATZ_DB_USER"),
+                        password=os.getenv("STATZ_DB_PASS"),
+                        database=os.getenv("STATZ_DB_NAME"),
+                    )
+                    print("[ + ] MySQL Connection Established")
 
-                uuid = self.cursor.fetchone()[0]
-                self.cursor.nextset()
+                    cursor = connection.cursor()
+
+                except Error as e:
+                    print(f"[ - ] Error Connecting To MySQL: {e}")
+                    return None
+
+                get_uuid = f"SELECT uuid FROM player WHERE name = '{username}'"
+                cursor.execute(get_uuid)
+
+                uuid_result = cursor.fetchone()
+                if cursor.nextset():
+                    cursor.fetchall()
+
+                uuid = uuid_result[0]
+
+                connection.close()
 
                 stats_dict = {
                     "DAMAGE_TAKEN": 0,
@@ -212,14 +232,31 @@ class Player(commands.Cog):
                     "BALANCE": 0,
                 }
 
+                try :
+                    connection = mysql.connect(
+                        host=os.getenv("STATZ_DB_HOST"),
+                        user=os.getenv("STATZ_DB_USER"),
+                        password=os.getenv("STATZ_DB_PASS"),
+                        database=os.getenv("STATZ_DB_NAME"),
+                    )
+                    print("[ + ] MySQL Connection Established")
+
+                    cursor = connection.cursor()
+
+                except Error as e:
+                    print(f"[ - ] Error Connecting To MySQL: {e}")
+                    return None
+
                 for stat_name in stats_dict.keys():
                     query = f"SELECT val FROM stats WHERE uuid = '{uuid}' AND stat = '{stat_name}'"
 
-                    self.cursor.execute(query)
-                    result = self.cursor.fetchone()
+                    cursor.execute(query)
+                    result = cursor.fetchone()
 
                     if result:
                         stats_dict[stat_name] = result[0]
+
+                connection.close()
 
                 embed = discord.Embed(
                     title="Player Statistics",
