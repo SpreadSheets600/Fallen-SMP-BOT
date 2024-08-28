@@ -157,14 +157,14 @@ class Player(commands.Cog):
         name="stats",
         description="Get Stats About A Player",
     )
-    async def pl_stats(self, ctx, player: discord.Member):
+    async def pl_stats(self, ctx, player: discord.Member = None):
         await ctx.defer()
 
         if player is None:
             player = ctx.author
 
         def convert_time(seconds):
-            seconds = seconds // 60
+            seconds = seconds//20
             minutes = seconds // 60
             hours = minutes // 60
             days = hours // 24
@@ -183,7 +183,7 @@ class Player(commands.Cog):
                 ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                 await ConsoleChannel.send(f"zstats update {username}")
 
-                get_uuid = f"SELECT uuid FROM zstat_player WHERE name = '{username}'"
+                get_uuid = f"SELECT uuid FROM player WHERE name = '{username}'"
                 self.cursor.execute(get_uuid)
 
                 uuid = self.cursor.fetchone()[0]
@@ -195,7 +195,7 @@ class Player(commands.Cog):
                     "FISH_CAUGHT": 0,
                     "ITEM_ENCHANTED": 0,
                     "MOB_KILLS": 0,
-                    "TOTAL_WORLD_TIME": 0,
+                    "PLAY_ONE_MINUTE": 0,
                     "RAID_WIN": 0,
                     "TRADED_WITH_VILLAGER": 0,
                     "z:shovel": 0,
@@ -213,7 +213,7 @@ class Player(commands.Cog):
                 }
 
                 for stat_name in stats_dict.keys():
-                    query = f"SELECT val FROM zstat_stats WHERE uuid = '{uuid}' AND stat = '{stat_name}'"
+                    query = f"SELECT val FROM stats WHERE uuid = '{uuid}' AND stat = '{stat_name}'"
 
                     self.cursor.execute(query)
                     result = self.cursor.fetchone()
@@ -239,7 +239,7 @@ class Player(commands.Cog):
                     inline=True,
                 )
 
-                playtime = stats_dict["TOTAL_WORLD_TIME"]
+                playtime = stats_dict["PLAY_ONE_MINUTE"]
                 days, hours, minutes = convert_time(playtime)
 
                 embed.add_field(
@@ -461,7 +461,7 @@ class Additional_Statisitcs(discord.ui.View):
             msg = message.content.split(" ")
 
             balance_raw = msg[-1][1:]
-            balance = balance_raw.replace(",", "")
+            balance = balance_raw.split(".")[0]
 
             balance = int(balance)
             balance = round(balance)

@@ -5,6 +5,7 @@ import pymongo
 import discord
 import asyncio
 import datetime
+from datetime import datetime
 from pymongo import MongoClient
 from discord.ext.pages import *
 from discord.ext.bridge import BridgeSlashGroup
@@ -1004,14 +1005,6 @@ class WhitelistButtons(discord.ui.View):
 
                 self.disable_all_items()
                 button.style = discord.ButtonStyle.secondary
-
-                self.main_embed.add_field(
-                    name="ERROR", value="User Not Found", inline=False
-                )
-
-                await interaction.followup.edit_message(
-                    embed=self.main_embed, message_id=message_id, view=self
-                )
 
     @discord.ui.button(
         label="Reject", custom_id="reject", style=discord.ButtonStyle.danger

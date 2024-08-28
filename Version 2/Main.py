@@ -90,8 +90,15 @@ if mongo_client:
 
     sample_data = {
         "ID": 123456789012345678,
-        "StocksAmount": {"AMD": 0,"INTC": 0, "MSFT": 0, "AAPL": 0, "GOOGL": 0},
-        "StocksBuyPrice": {"AMD_P": 0,"INTC_P": 0, "MSFT_p": 0, "AAPL_P": 0, "GOOGL_p": 0},
+        "Username": "SampleUser",
+        "StocksAmount": {"AMD": 0, "INTC": 0, "MSFT": 0, "AAPL": 0, "GOOGL": 0},
+        "StocksBuyPrice": {
+            "AMD_P": 0,
+            "INTC_P": 0,
+            "MSFT_p": 0,
+            "AAPL_P": 0,
+            "GOOGL_p": 0,
+        },
         "Timestamp": "2024-08-22T12:00:00Z",
     }
 
@@ -107,8 +114,8 @@ if mongo_client:
 
     sample_data = {
         "ID": 123456789012345678,
-        "CryptoAmount": {"BTC": 0,"ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
-        "CryptoBuyPrice": {"BTC_P": 0,"ETH_P": 0, "BNB_P": 0, "SOL_P": 0, "AVAX_P": 0},
+        "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
+        "CryptoBuyPrice": {"BTC_P": 0, "ETH_P": 0, "BNB_P": 0, "SOL_P": 0, "AVAX_P": 0},
         "Timestamp": "2024-08-22T12:00:00Z",
     }
 
@@ -118,7 +125,58 @@ if mongo_client:
     collection.delete_one({"ID": 123456789012345678})
 
     print("[ + ] Sample Document Removed\n")
-    
+
+if mongo_client:
+    db = mongo_client["Users"]
+    userdata_collection = db["UserData"]
+
+    existing_users = userdata_collection.find({})
+
+    stocks_collection = db["UserStocks"]
+    crypto_collection = db["UserCrypto"]
+
+    for user in existing_users:
+        user_id = user["_id"]
+        username = user["Username"]
+
+        stock_data = {
+            "ID": user_id,
+            "Username": username,
+            "StocksAmount": {"AMD": 0, "INTC": 0, "MSFT": 0, "AAPL": 0, "GOOGL": 0},
+            "StocksBuyPrice": {
+                "AMD_P": 0,
+                "INTC_P": 0,
+                "MSFT_P": 0,
+                "AAPL_P": 0,
+                "GOOGL_P": 0,
+            },
+            "Timestamp": f"{datetime.datetime.now().isoformat()}",
+        }
+
+        stocks_collection.insert_one(stock_data)
+
+        crypto_data = {
+            "ID": user_id,
+            "Username": username,
+            "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
+            "CryptoBuyPrice": {
+                "BTC_P": 0,
+                "ETH_P": 0,
+                "BNB_P": 0,
+                "SOL_P": 0,
+                "AVAX_P": 0,
+            },
+            "Timestamp": f"{datetime.datetime.now().isoformat()}",
+        }
+
+        crypto_collection.insert_one(crypto_data)
+
+        stocks_collection.update_one({"ID": user_id}, {"$set": stock_data}, upsert=True)
+
+        crypto_collection.update_one(
+            {"ID": user_id}, {"$set": crypto_data}, upsert=True
+        )
+
 
 # =============================================================================== #
 
@@ -241,6 +299,7 @@ async def on_bridge_command_error(ctx, error):
         await ctx.respond("You Do Not Have Permission To Use This Command")
     else:
         await ctx.respond("An Error Occurred")
+
 
 # =============================================================================== #
 

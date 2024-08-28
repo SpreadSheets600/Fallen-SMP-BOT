@@ -92,7 +92,7 @@ class Stocks(commands.Cog):
     )
     async def quote(self, ctx, symbol):
 
-        await ctx.defer(ephermal=True)
+        await ctx.defer(ephemeral=True)
 
         valid_symbols = ["AMD", "APPLE", "INTEL", "GOOGLE", "MICROSOFT"]
 
@@ -158,7 +158,7 @@ class Stocks(commands.Cog):
     )
     async def company(self, ctx, symbol):
 
-        await ctx.defer(ephermal=True)
+        await ctx.defer(ephemeral=True)
 
         valid_symbols = ["AMD", "APPLE", "INTEL", "GOOGLE", "MICROSOFT"]
 
@@ -234,13 +234,12 @@ class Stocks(commands.Cog):
             ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
             await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-
     @stock.command(
         name="portfolio",
         description="Get User Portfolio",
     )
     async def portfolio(self, ctx):
-        await ctx.defer(ephermal=True)
+        await ctx.defer(ephemeral=True)
 
         try:
             document = self.collection.find_one({"ID": ctx.author.id})
@@ -264,7 +263,7 @@ class Stocks(commands.Cog):
                 "AAPL": current_prices["AAPL"] - stocks_buy_price["AAPL_P"],
                 "INTC": current_prices["INTC"] - stocks_buy_price["INTC_P"],
                 "GOOGL": current_prices["GOOGL"] - stocks_buy_price["GOOGL_P"],
-                "MSFT": current_prices["MSFT"] - stocks_buy_price["MSFT_P"]
+                "MSFT": current_prices["MSFT"] - stocks_buy_price["MSFT_P"],
             }
 
             if document:
@@ -316,7 +315,7 @@ class Stocks(commands.Cog):
                 )
 
                 await ctx.respond(embed=embed, ephemeral=True)
-        
+
         except Exception as e:
             print(f"[ - ] Whitelist COG : Error : {e}")
             await ctx.respond(
@@ -328,35 +327,17 @@ class Stocks(commands.Cog):
             await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @stock.command(
-        name="sell",
-        description="Sell Stocks (Minectaft Economy)",
+        name="buy",
+        description="Buy Stocks (Minecraft Economy)",
     )
     @option(
         "symbol",
         description="The Stock Symbol",
         choices=["AMD", "APPLE", "INTEL", "GOOGLE", "MICROSOFT"],
     )
-    @option("quantity", description="The Quantity Of Stocks To Sell", type=int)
-    async def sell(self, ctx, symbol: str, quantity: int):
-        await ctx.defer(ephermal=True)
-
-        valid_symbols = ["AMD", "APPLE", "INTEL", "GOOGLE", "MICROSOFT"]
-
-        if symbol not in valid_symbols:
-            embed = discord.Embed(
-                title="Invalid Symbol",
-                description="Please Enter A Valid Symbol",
-                color=0xFF0000,
-            )
-
-            embed.add_field(
-                name="Valid Symbols",
-                value="AMD, APPLE, INTEL, GOOGLE, MICROSOFT",
-                inline=True,
-            )
-
-            await ctx.respond(embed=embed, ephemeral=True)
-            return
+    @option("quantity", description="The Quantity Of Stocks To Buy", type=int)
+    async def buy(self, ctx, symbol: str, quantity: int):
+        await ctx.defer(ephemeral=True)
 
         symbols = {
             "AMD": "AMD",
@@ -366,34 +347,95 @@ class Stocks(commands.Cog):
             "MICROSOFT": "MSFT",
         }
 
-        try:
-            main_symbol = symbols[symbol]
-        except Exception as e:
-            main_symbol = symbol.upper()
-
+        main_symbol = symbols.get(symbol, symbol.upper())
 
         try:
             quote = self.finnhub_client.quote(symbol=main_symbol)
 
-            if quote:
-                price = quote.get("c", 0)
-                total_price = price * quantity
+            if not quote:
+                embed = discord.Embed(
+                    title="Stock Data Unavailable",
+                    description="Could not retrieve stock information. Please try again later.",
+                    color=0xFF0000,
+                )
+                return await ctx.respond(embed=embed, ephemeral=True)
 
-                document = self.collection.find_one({"ID": ctx.author.id})
-                if not document:
+            price = quote.get("c", 0)
+            total_price = price * quantity
 
-                    user_data = {
-                        "ID": ctx.author.id,
-                        "StocksAmount": {"AMD": 0, "AAPL": 0, "INTC": 0, "GOOGL": 0, "MSFT": 0},
-                        "StocksBuyPrice": {"AMD_P": 0, "AAPL_P": 0, "INTC_P": 0, "GOOGL_P": 0, "MSFT_P": 0},
-                        "Timestamp": "2024-08-22T12:00:00Z",
-                    }
+            document = self.collection.find_one({"ID": ctx.author.id})
+            if not document:
+                
+                game_username = "default_username"
+                user_data = {
+                    "ID": ctx.author.id,
+                    "Username": game_username,
+                    "StocksAmount": {symbol: 0 for symbol in symbols.values()},
+                    "StocksBuyPrice": {f"{symbol}_P": 0 for symbol in symbols.values()},
+                    "Timestamp": "2024-08-22T12:00:00Z",
+                }
+            else:
+                user_data = document
 
-                current_amount = user_data["StocksAmount"].get(main_symbol, 0)
-                user_data["StocksAmount"][main_symbol] = current_amount + quantity
-                user_data["StocksBuyPrice"][f"{main_symbol}_P"] = price
+            current_amount = user_data["StocksAmount"].get(main_symbol, 0)
+            user_data["StocksAmount"][main_symbol] = current_amount + quantity
+            user_data["StocksBuyPrice"][f"{main_symbol}_P"] = price
 
-                self.collection.update_one({"ID": ctx.author.id}, {"$set": user_data}, upsert=True)
+            self.collection.update_one(
+                {"ID": ctx.author.id}, {"$set": user_data}, upsert=True
+            )
+
+            console_channel = self.bot.get_channel(CONSOLE_CHANNEL)
+            sent = await console_channel.send(
+                f"eco take {total_price} {user_data['Username']}"
+            )
+
+            def check(m):
+                return (
+                    m.channel == console_channel
+                    and m.author.id == 1270267541289439304
+                    and m.reference
+                    and m.reference.message_id == sent.id
+                )
+
+            try:
+                m = await self.bot.wait_for("message", check=check, timeout=10)
+            except asyncio.TimeoutError:
+                embed = discord.Embed(
+                    title="Purchase Timeout",
+                    description="Could No Complete Purchase. Please Try Again Later.",
+                    color=0xFF0000,
+                )
+                return await ctx.respond(embed=embed, ephemeral=True)
+
+            if "Error:" in m.content:
+                embed = discord.Embed(
+                    title="Purchase Unsuccessful",
+                    description="### Insufficient Balance",
+                    color=0xFF0000,
+                )
+                return await ctx.respond(embed=embed, ephemeral=True)
+
+            balance_raw = m[-1][1:]
+            balance = balance_raw.replace(",", "")
+            balance = balance.split(".")[0]
+
+            embed = discord.Embed(
+                title="Purchase Successful",
+                description=(
+                    f"Successfully Bought {quantity} {symbol} Stocks\n"
+                    f"### Total Price: ${total_price}\n"
+                    f"### New Balance: {balance}"
+                ),
+                color=0xD5E4CF,
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
 
         except Exception as e:
-            pass
+            embed = discord.Embed(
+                title="Error",
+                description="An Error Occurred. Please Try Again Later.",
+                color=0xFF0000,
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+            print(f"[ - ] Stocks COG : Error : {e}")
