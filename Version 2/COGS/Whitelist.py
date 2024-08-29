@@ -30,7 +30,6 @@ ADMINS = [
 
 MODS = [
     1273283762624663625,
-    1261684685235294250,
     1147935418508132423,
 ]
 
@@ -81,7 +80,7 @@ class Whitelist(commands.Cog):
                     "Username": username,
                     "Gender": gender,
                     "Backstory": backstory,
-                    "Timestamp": datetime.datetime.now(),
+                    "Timestamp": datetime.now(),
                 }
 
                 self.collection.insert_one(document)
@@ -754,7 +753,10 @@ class WhitelistModal(discord.ui.Modal):
 
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
+
         self.collection = self.db["UserData"]
+        self.stocks = self.db["UserStocks"]
+        self.crypto = self.db["UserCrypto"]
 
         self.qna = {
             "Role Earned by Killing Player Unwilling": "outlaw",
@@ -797,7 +799,6 @@ class WhitelistModal(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-
         await interaction.response.defer(ephemeral=True)
 
         try:
@@ -893,7 +894,7 @@ class WhitelistModal(discord.ui.Modal):
 
             WhitelistChannel = self.bot.get_channel(WHITELIST_CHANNEL)
             await WhitelistChannel.send(
-                "<@727012870683885578> <@1188730953217097811> <@664157606587138048> <@896411007797325824> <@437622938242514945> <@1147935418508132423> <@1261684685235294250> <@1273283762624663625>",
+                "<@727012870683885578> <@1188730953217097811> <@664157606587138048> <@896411007797325824> <@437622938242514945> <@1147935418508132423> <@1273283762624663625>",
                 embed=embed,
                 view=WhitelistButtons(
                     interaction.user.id, self.user, self.bot, main_embed=embed
@@ -906,15 +907,51 @@ class WhitelistModal(discord.ui.Modal):
                     "Username": self.children[0].value,
                     "Gender": self.children[1].value,
                     "Backstory": character_backstory,
-                    "Timestamp": datetime.datetime.now().isoformat(),
+                    "Timestamp": datetime.now().isoformat(),
+                }
+            )
+
+            self.stocks.insert_one(
+                {
+                    "ID": interaction.user.id,
+                    "Username": self.children[0].value,
+                    "StocksAmount": {
+                        "AMD": 0,
+                        "INTC": 0,
+                        "MSFT": 0,
+                        "AAPL": 0,
+                        "GOOGL": 0,
+                    },
+                    "StocksBuyPrice": {
+                        "AMD_P": 0,
+                        "INTC_P": 0,
+                        "MSFT_p": 0,
+                        "AAPL_P": 0,
+                        "GOOGL_p": 0,
+                    },
+                    "Timestamp": datetime.now().isoformat(),
+                }
+            )
+
+            self.crypto.insert_one(
+                {
+                    "ID": interaction.user.id,
+                    "Username": self.children[0].value,
+                    "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
+                    "CryptoBuyPrice": {
+                        "BTC_P": 0,
+                        "ETH_P": 0,
+                        "BNB_p": 0,
+                        "SOL_P": 0,
+                        "AVAX_p": 0,
+                    },
+                    "Timestamp": datetime.now().isoformat(),
                 }
             )
 
         except Exception as e:
             print(f"[ - ] Whitelist COG : Error : {e}")
-            await interaction.response.send_message(
-                f"[ - ] Whitelist COG : Error : \n```{e}```", ephemeral=True
-            )
+
 
 
 # =================================================================================================== #
