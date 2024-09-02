@@ -37,9 +37,6 @@ class Moderation(commands.Cog):
         ):
             return
 
-        if message.id in self.replied_messages:
-            return
-
         if (
             "<@1261353536206274672>" in message.content
             or "<@!1261353536206274672>" in message.content

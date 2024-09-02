@@ -9,6 +9,7 @@ from io import BytesIO
 from discord.ext import bridge
 from mcstatus import JavaServer
 from discord.ext import commands, tasks
+from COGS.Whitelist import COOLDOWN_ACTIVE
 from discord.ext.bridge import BridgeSlashGroup
 
 STATUS_FILE = "ServerStatus.json"
@@ -67,6 +68,11 @@ class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.update_status.start()
+
+        global COOLDOWN_ACTIVE
+        self.COOLDOWN_ACTIVE = COOLDOWN_ACTIVE
+
+        print("[ + ] Status COG : COOLDOWN STATUS : ", self.COOLDOWN_ACTIVE)
 
     @commands.slash_command(
         name="status",
@@ -165,8 +171,12 @@ class Status(commands.Cog):
             await status_message.add_reaction("✅")
             await self.update_status()
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=60)
     async def update_status(self):
+        if COOLDOWN_ACTIVE:
+            print("[ - ] Status COG : Cooldown Active")
+            return
+        
         for message_id, channel_id in zip(status_message_ids, status_channel_ids):
             channel = self.bot.get_channel(channel_id)
 
@@ -183,24 +193,55 @@ class Status(commands.Cog):
                     )
                     embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
                     embed.set_author(name="FALLEN SMP")
-                    embed.add_field(
-                        name="Players", value=server_info.players.online, inline=True
-                    )
-                    embed.add_field(
-                        name="Version",
-                        value=server_info.version.name.split(" ")[1],
-                        inline=True,
-                    )
-                    embed.add_field(
-                        name="Software",
-                        value=server_info.version.name.split(" ")[0],
-                        inline=True,
-                    )
-                    embed.add_field(
-                        name="Latency",
-                        value=f"{server_info.latency:.2f} ms",
-                        inline=True,
-                    )
+
+                    try:
+                        embed.add_field(
+                            name="Players",
+                            value=server_info.players.online,
+                            inline=True,
+                        )
+                    except Exception:
+                        embed.add_field(name="Players", value="--", inline=True)
+
+                    try:
+                        embed.add_field(
+                            name="Version",
+                            value=server_info.version.name.split(" ")[1],
+                            inline=True,
+                        )
+                    except Exception:
+                        embed.add_field(
+                            name="Version",
+                            value="1.21",
+                            inline=True,
+                        )
+                    
+                    try:
+                        embed.add_field(
+                            name="Software",
+                            value=server_info.version.name.split(" ")[0],
+                            inline=True,
+                        )
+                    except Exception:
+                        embed.add_field(
+                            name="Software",
+                            value="Paper",
+                            inline=True,
+                        )
+
+                    try:
+                        embed.add_field(
+                            name="Latency",
+                            value=f"{server_info.latency:.2f} ms",
+                            inline=True,
+                        )
+                    except Exception:
+                        embed.add_field(
+                            name="Latency",
+                            value="--",
+                            inline=True,
+                        )
+
                     embed.add_field(
                         name="Server IP",
                         value="IP : `play.fallensmp.xyz`",
@@ -212,18 +253,27 @@ class Status(commands.Cog):
                         inline=False,
                     )
 
-                    icon_base64 = server_info.icon
-                    if icon_base64:
-                        image_data = base64.b64decode(icon_base64.split(",")[1])
-                        image = BytesIO(image_data)
-                        image.seek(0)
-                        file = discord.File(image, filename="ICON.png")
-                        embed.set_thumbnail(url="attachment://ICON.png")
+                    try:
+                        icon_base64 = server_info.icon
 
-                    embed.set_footer(text=f"Updates Every 30 Seconds | Last Updated ")
+                        if icon_base64:
+                            image_data = base64.b64decode(icon_base64.split(",")[1])
+                            image = BytesIO(image_data)
+                            image.seek(0)
+                            file = discord.File(image, filename="ICON.png")
+                            embed.set_thumbnail(url="attachment://ICON.png")
+
+                    except Exception:
+                        pass
+
+                    embed.set_footer(text=f"Updates Every 60 Seconds | Last Updated ")
                     embed.timestamp = datetime.datetime.now()
 
-                    await message.edit(content="", embed=embed, file=file)
+                    if icon_base64:
+                        await message.edit(content="", embed=embed, file=file)
+
+                    else:
+                        await message.edit(content="", embed=embed)
                 else:
                     embed = discord.Embed(
                         title=":red_circle: Server Status - Offline", color=0xFF0000

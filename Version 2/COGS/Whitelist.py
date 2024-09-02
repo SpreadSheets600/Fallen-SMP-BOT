@@ -38,6 +38,9 @@ WHITELIST_CHANNEL = 1267512076222595122
 CONSOLE_CHANNEL = 1263898954999922720
 ERROR_CHANNEL = 1275759089024241797
 
+COOLDOWN_ACTIVE = False
+COOLDOWN = 30
+
 # =================================================================================================== #
 
 
@@ -56,12 +59,20 @@ class Whitelist(commands.Cog):
                 json.dump([], f)
                 self.blocked = []
 
-    wl = SlashCommandGroup(name="whitelist", description="Whitelist Commands")
+        async def set_cooldown():
+            global COOLDOWN_ACTIVE
+            COOLDOWN_ACTIVE = True
+            await asyncio.sleep(COOLDOWN)
+            COOLDOWN_ACTIVE = False
+
+    wl = SlashCommandGroup(name="wl", description="Whitelist Commands")
 
     @wl.command(name="insert", description="Insert A User Into The Whitelist")
     async def insert(
         self, ctx, user: discord.User, username: str, gender: str, backstory: str
     ):
+        await ctx.defer(ephemeral=True)
+
         if ctx.author.id not in ADMINS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
@@ -104,6 +115,8 @@ class Whitelist(commands.Cog):
         name="search", description="Search For A User In The Whitelist", aliases=["s"]
     )
     async def search(self, ctx, user):
+        await ctx.defer(ephemeral=True)
+
         if ctx.author.id not in ADMINS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
@@ -168,6 +181,8 @@ class Whitelist(commands.Cog):
 
     @wl.command(name="add", description="Add A User To The Whitelist")
     async def add(self, ctx, user: discord.User):
+        await ctx.defer(ephemeral=True)
+
         if ctx.author.id not in ADMINS and ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
@@ -231,6 +246,8 @@ class Whitelist(commands.Cog):
         aliases=["r", "del"],
     )
     async def remove(self, ctx, user: discord.User):
+        await ctx.defer(ephemeral=True)
+
         if ctx.author.id not in ADMINS and ctx.author.id not in MODS:
             await ctx.respond(
                 "You Do Not Have Permission To Use This Command",
@@ -279,6 +296,8 @@ class Whitelist(commands.Cog):
 
     @wl.command(name="list", description="List All Whitelist Applications")
     async def list(self, ctx):
+        await ctx.defer(ephemeral=True)
+
         try:
             rows = list(self.collection.find())
 
@@ -356,6 +375,8 @@ class Whitelist(commands.Cog):
         aliases=["wh"],
     )
     async def whitelist(self, ctx):
+        await ctx.defer(ephemeral=True)
+
         try:
             document = self.collection.find_one({"ID": ctx.author.id})
 
@@ -424,6 +445,8 @@ class Whitelist(commands.Cog):
         aliases=["g"],
     )
     async def guide(self, ctx):
+        await ctx.defer(ephemeral=True)
+
         embed = discord.Embed(
             title=":book: Server Guide",
             description="Choose A Guide Topic \n\n**Basic Roles Info** : Learn About Server Roles\n**How To Get Whitelisted** : Learn about Whitelisting Process\n**How To Write A Backstory** : Learn about Writing Character Backstory",
@@ -438,6 +461,8 @@ class Whitelist(commands.Cog):
         aliases=["r"],
     )
     async def rules(self, ctx):
+        await ctx.defer(ephemeral=True)
+
         rules = """
             1. **Refrain from Unnecessary PvP**
             > If you want to engage in PvP, arrange it with others and ensure everyone agrees. Unplanned PvP can disrupt the game experience.
@@ -490,10 +515,11 @@ class WhitelistApplication(discord.ui.View):
 
     @discord.ui.button(label="Guide", style=discord.ButtonStyle.secondary)
     async def guide_button_callback(self, button, interaction):
+        await interaction.response.defer(ephemeral=True)
 
         if interaction.user.id != self.interaction_user.id:
 
-            await interaction.response.send_message(
+            await interaction.folloup.send(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
@@ -504,16 +530,17 @@ class WhitelistApplication(discord.ui.View):
                 color=0x2F3136,
             )
 
-            await interaction.response.send_message(
+            await interaction.folloup.send(
                 embed=embed, ephemeral=True, view=GuideMenu()
             )
 
     @discord.ui.button(label="Rules", style=discord.ButtonStyle.secondary)
     async def rule_button_callback(self, button, interaction):
+        await interaction.response.defer(ephemeral=True)
 
         if interaction.user.id != self.interaction_user.id:
 
-            await interaction.response.send_message(
+            await interaction.folloup.send(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
@@ -548,7 +575,7 @@ class WhitelistApplication(discord.ui.View):
                 color=0x2F3136,
             )
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.folloup.send(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="Form", style=discord.ButtonStyle.secondary)
     async def whitelist_form(self, button, interaction):
@@ -561,18 +588,25 @@ class WhitelistApplication(discord.ui.View):
 
         else:
 
-            await interaction.response.send_modal(
-                WhitelistModal(
-                    title="Fallen SMP Whitelist Form",
-                    user=self.interaction_user,
-                    bot=self.bot,
+            try:
+                await interaction.response.send_modal(
+                    WhitelistModal(
+                        title="Fallen SMP Whitelist Form",
+                        user=self.interaction_user,
+                        bot=self.bot,
+                    )
                 )
-            )
 
-            message_id = interaction.message.id
+                message_id = interaction.message.id
+                button.disabled = True
+                await interaction.followup.edit_message(
+                    message_id=message_id, view=self
+                )
 
-            button.disabled = True
-            await interaction.followup.edit_message(message_id=message_id, view=self)
+            except Exception as e:
+                await interaction.response.send_message(
+                    "Please Try Again, The Form Expired", ephemeral=True
+                )
 
 
 # =================================================================================================== #
@@ -795,9 +829,10 @@ class WhitelistModal(discord.ui.Modal):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
+        global COOLDOWN_ACTIVE
 
         try:
+            await interaction.response.defer(ephemeral=True)
 
             character_backstory = self.children[2].value
             agree_backstory = self.children[3].value
@@ -863,8 +898,6 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            print(f"[ + ] Whitelist COG : User Inserted : {interaction.user.id}")
-
             embed = discord.Embed(
                 title="Whitelist Form Submitted",
                 description="### Your Whitelist Application Has Been Submitted\nPlease Wait For The Admins To Review Your Application",
@@ -897,56 +930,69 @@ class WhitelistModal(discord.ui.Modal):
                 ),
             )
 
-            self.collection.insert_one(
-                {
-                    "ID": interaction.user.id,
-                    "Username": self.children[0].value,
-                    "Gender": self.children[1].value,
-                    "Backstory": character_backstory,
-                    "Timestamp": datetime.now().isoformat(),
-                }
-            )
-
-            self.stocks.insert_one(
-                {
-                    "ID": interaction.user.id,
-                    "Username": self.children[0].value,
-                    "StocksAmount": {
-                        "AMD": 0,
-                        "INTC": 0,
-                        "MSFT": 0,
-                        "AAPL": 0,
-                        "GOOGL": 0,
-                    },
-                    "StocksBuyPrice": {
-                        "AMD_P": 0,
-                        "INTC_P": 0,
-                        "MSFT_p": 0,
-                        "AAPL_P": 0,
-                        "GOOGL_p": 0,
-                    },
-                    "Timestamp": datetime.now().isoformat(),
-                }
-            )
-
-            self.crypto.insert_one(
-                {
-                    "ID": interaction.user.id,
-                    "Username": self.children[0].value,
-                    "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
-                    "CryptoBuyPrice": {
-                        "BTC_P": 0,
-                        "ETH_P": 0,
-                        "BNB_p": 0,
-                        "SOL_P": 0,
-                        "AVAX_p": 0,
-                    },
-                    "Timestamp": datetime.now().isoformat(),
-                }
-            )
+            if not COOLDOWN_ACTIVE:
+                COOLDOWN_ACTIVE = True
+                asyncio.create_task(
+                    self.handle_cooldown_and_insert(interaction, character_backstory)
+                )
 
         except Exception as e:
             print(f"[ - ] Whitelist COG : Error : {e}")
+
+    async def handle_cooldown_and_insert(self, interaction, character_backstory):
+        global COOLDOWN_ACTIVE
+
+        self.collection.insert_one(
+            {
+                "ID": interaction.user.id,
+                "Username": self.children[0].value,
+                "Gender": self.children[1].value,
+                "Backstory": character_backstory,
+                "Timestamp": datetime.now().isoformat(),
+            }
+        )
+
+        self.stocks.insert_one(
+            {
+                "ID": interaction.user.id,
+                "Username": self.children[0].value,
+                "StocksAmount": {
+                    "AMD": 0,
+                    "INTC": 0,
+                    "MSFT": 0,
+                    "AAPL": 0,
+                    "GOOGL": 0,
+                },
+                "StocksBuyPrice": {
+                    "AMD_P": 0,
+                    "INTC_P": 0,
+                    "MSFT_p": 0,
+                    "AAPL_P": 0,
+                    "GOOGL_p": 0,
+                },
+                "Timestamp": datetime.now().isoformat(),
+            }
+        )
+
+        self.crypto.insert_one(
+            {
+                "ID": interaction.user.id,
+                "Username": self.children[0].value,
+                "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
+                "CryptoBuyPrice": {
+                    "BTC_P": 0,
+                    "ETH_P": 0,
+                    "BNB_p": 0,
+                    "SOL_P": 0,
+                    "AVAX_p": 0,
+                },
+                "Timestamp": datetime.now().isoformat(),
+            }
+        )
+
+        print(f"[ + ] Whitelist COG : User Inserted : {interaction.user.id}")
+
+        COOLDOWN_ACTIVE = False
 
 
 # =================================================================================================== #
@@ -974,255 +1020,224 @@ class WhitelistButtons(discord.ui.View):
         label="Accept", custom_id="accept", style=discord.ButtonStyle.success
     )
     async def accept_button_callback(self, button, interaction):
+        global COOLDOWN_ACTIVE
+        if COOLDOWN_ACTIVE:
+            await interaction.response.send_message(
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations\nBot Is Performing DB Operations", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
 
         if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
+            return
+
+        await interaction.followup.send(
+            "Accepting User Application - Adding Data .....", ephemeral=True
+        )
+
+        document = self.collection.find_one({"ID": self.user_id})
+
+        if document:
+            username = document.get("Username")
+
+            ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
+            await ConsoleChannel.send(f"whitelist add {username}")
+
+            embed = discord.Embed(
+                title="User Whitelisted",
+                description=f"User `{username}` Has Been Whitelisted",
+                color=0xD5E4CF,
+            )
+
+            user_embed = discord.Embed(
+                title="Whitelist Application Accepted",
+                description=f"Your Whitelist Application Has Been Accepted. \n## Join Now : `play.fallensmp.xyz`",
+                color=0xD5E4CF,
+            )
+
+            try:
+                User = self.bot.get_user(self.user_id)
+                await User.send(embed=user_embed)
+            except Exception as e:
+                print(f"Failed to send DM to user {self.user_id}: {e}")
+
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+            message_id = interaction.message.id
+
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+
+            self.main_embed.add_field(
+                name="Whitelist Accepted By",
+                value=f"{interaction.user.display_name}",
+                inline=False,
+            )
+
+            await interaction.message.edit(embed=self.main_embed, view=self)
 
         else:
+            embed = discord.Embed(
+                title="User Not Found",
+                description=f"No Whitelist Application Found For **{self.user.display_name}**.",
+                color=discord.Color.red(),
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
-            document = self.collection.find_one({"ID": self.user_id})
+            message_id = interaction.message.id
 
-            if document:
-                username = document.get("Username")
-
-                ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
-                await ConsoleChannel.send(f"whitelist add {username}")
-
-                embed = discord.Embed(
-                    title="User Whitelisted",
-                    description=f"User `{username}` Has Been Whitelisted",
-                    color=0xD5E4CF,
-                )
-
-                user_embed = discord.Embed(
-                    title="Whitelist Application Accepted",
-                    description=f"Your Whitelist Application Has Been Accepted. \n## Join Now : `play.fallensmp.xyz`",
-                    color=0xD5E4CF,
-                )
-
-                try:
-                    User = self.bot.get_user(self.user_id)
-                    await User.send(embed=user_embed)
-                except Exception as e:
-                    pass
-
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-
-                message_id = interaction.message.id
-
-                self.disable_all_items()
-                button.style = discord.ButtonStyle.secondary
-
-                self.main_embed.add_field(
-                    name="Whitelist Accepted By",
-                    value=f"{interaction.user.display_name}",
-                    inline=False,
-                )
-
-                await interaction.followup.edit_message(
-                    embed=self.main_embed, message_id=message_id, view=self
-                )
-
-            else:
-                embed = discord.Embed(
-                    title="User Not Found",
-                    description=f"No Whitelist Application Found For **{self.user.display_name}**.",
-                    color=discord.Color.red(),
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-
-                message_id = interaction.message.id
-
-                self.disable_all_items()
-                button.style = discord.ButtonStyle.secondary
+            self.disable_all_items()
+            button.style = discord.ButtonStyle.secondary
+            await interaction.message.edit(embed=self.main_embed, view=self)
 
     @discord.ui.button(
         label="Reject", custom_id="reject", style=discord.ButtonStyle.danger
     )
     async def reject_button_callback(self, button, interaction):
+        global COOLDOWN_ACTIVE
+        if COOLDOWN_ACTIVE:
+            await interaction.response.send_message(
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations", ephemeral=True
+            )
+            return
 
         if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
+            return
 
-            message_id = interaction.message.id
+        await interaction.response.defer(ephemeral=True)
 
-            self.disable_all_items()
-            button.style = discord.ButtonStyle.secondary
-            await interaction.followup.edit_message(message_id=message_id, view=self)
+        await interaction.followup.send(
+            "Rejecting User Application - Deleting Data .....", ephemeral=True
+        )
 
-        else:
-            await interaction.response.send_modal(
-                WhitelistRejectModal(
-                    main_embed=self.main_embed,
-                    mgs_id=interaction.message.id,
-                    user=self.user,
-                    bot=self.bot,
-                )
-            )
+        embed = discord.Embed(
+            title="Whitelist Application Rejected",
+            description=f"Your Whitelist Application Has Been Rejected By {interaction.user.display_name}\n\nPlease Check The Application Again",
+            color=0xFBEADC,
+        )
 
-            message_id = interaction.message.id
+        embed.add_field(
+            name="Possible Reasons",
+            value="1. Incorrect Backstory\n    Please Follow The Criteria ( See Guide Point 3 )\n\n2. Existing Backstory\n    Please Write A New Backstory, Current One Is Already Used",
+            inline=False,
+        )
 
-            self.main_embed.add_field(
-                name="Whitelist Rejected By",
-                value=f"{interaction.user.display_name}",
-                inline=False,
-            )
+        user = self.bot.get_user(self.user_id)
 
-            self.main_embed.color = discord.Color.red()
+        try:
+            await user.send(embed=embed)
+        except Exception as e:
+            print(f"Failed to send DM to user {self.user_id}: {e}")
 
-            self.disable_all_items()
-            button.style = discord.ButtonStyle.secondary
+        message_id = interaction.message.id
 
-            await interaction.followup.edit_message(
-                embed=self.main_embed, message_id=message_id, view=self
-            )
+        self.main_embed.add_field(
+            name="Whitelist Rejected By",
+            value=f"{interaction.user.display_name}",
+            inline=False,
+        )
+
+        self.main_embed.color = discord.Color.red()
+
+        document = self.collection.find_one({"ID": self.user.id})
+
+        if document:
+            username = document.get("Username")
+            self.collection.delete_one({"ID": self.user.id})
+
+            ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
+            await ConsoleChannel.send(f"whitelist remove {username}")
+
+            print(f"[ + ] Whitelist COG : User Removed : {self.user.id}")
+
+        self.disable_all_items()
+        button.style = discord.ButtonStyle.secondary
+
+        await interaction.message.edit(embed=self.main_embed, view=self)
 
     @discord.ui.button(
         label="Block", custom_id="block", style=discord.ButtonStyle.danger
     )
     async def block_button_callback(self, button, interaction):
+        global COOLDOWN_ACTIVE
+        if COOLDOWN_ACTIVE:
+            await interaction.response.send_message(
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations", ephemeral=True
+            )
+            return
 
         if interaction.user.id not in ADMINS and interaction.user.id not in MODS:
             await interaction.response.send_message(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
+            return
 
-            message_id = interaction.message.id
+        await interaction.response.defer(ephemeral=True)
 
-            self.disable_all_items()
-            button.style = discord.ButtonStyle.secondary
-
-            await interaction.followup.edit_message(message_id=message_id, view=self)
-
-        else:
-
-            with open("BLOCKED.json", "r") as f:
-                data = json.load(f)
-
-            if "Blocked" not in data or not isinstance(data["Blocked"], list):
-                data["Blocked"] = []
-
-            print(f"[ + ] Whitelist COG : User Blocked : {self.user_id}")
-            data["Blocked"].append(self.user_id)
-
-            with open("BLOCKED.json", "w") as f:
-                json.dump(data, f, indent=4)
-
-            embed = discord.Embed(
-                title="User Blocked",
-                description=f"User `{self.user.display_name}` Has Been Blocked From Submitting The Application",
-                color=0xFBEADC,
-            )
-
-            document = self.collection.find_one({"ID": self.user.id})
-
-            if document:
-                username = document.get("Username")
-                self.collection.delete_one({"ID": self.user.id})
-
-            user = self.bot.get_user(self.user_id)
-            try:
-                await user.send(embed=embed)
-            except Exception as e:
-                pass
-
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-
-            message_id = interaction.message.id
-
-            self.disable_all_items()
-            button.style = discord.ButtonStyle.secondary
-
-            self.main_embed.add_field(
-                name="User Blocked By",
-                value=f"{interaction.user.display_name}",
-                inline=False,
-            )
-
-            await interaction.followup.edit_message(
-                embed=self.main_embed, message_id=message_id, view=self
-            )
-
-
-# =================================================================================================== #
-
-
-class WhitelistRejectModal(discord.ui.Modal):
-    def __init__(
-        self,
-        user: discord.Member,
-        bot: commands.Bot,
-        main_embed,
-        mgs_id,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(title="Whitelist Application Rejection")
-        self.main_embed = main_embed
-        self.msg_id = mgs_id
-        self.user = user
-        self.bot = bot
-
-        self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
-        self.db = self.mongo_client["Users"]
-        self.collection = self.db["UserData"]
-
-        self.add_item(
-            discord.ui.InputText(
-                label="Reason For Rejection",
-                placeholder="Enter The Reason For Rejection",
-                style=discord.InputTextStyle.multiline,
-            )
+        await interaction.followup.send(
+            "Blocking User - Deleting Data .....", ephemeral=True
         )
 
-    async def callback(self, interaction: discord.Interaction):
-        embed = discord.Embed(
-            title="Whitelist Application Rejected",
-            description=f"Your whitelist application has been rejected.\n**Reason:** {self.children[0].value}",
-            color=discord.Color.red(),
-        )
+        with open("BLOCKED.json", "r") as f:
+            data = json.load(f)
 
-        try:
-            await self.user.send(embed=embed)
+        if "Blocked" not in data or not isinstance(data["Blocked"], list):
+            data["Blocked"] = []
 
-        except Exception as e:
-            pass
+        print(f"[ + ] Whitelist COG : User Blocked : {self.user_id}")
+        data["Blocked"].append(self.user_id)
+
+        with open("BLOCKED.json", "w") as f:
+            json.dump(data, f, indent=4)
 
         embed = discord.Embed(
-            title="Whitelist Application Rejected",
-            description=f"Whitelist Application Rejected For {self.user.display_name}",
-            color=discord.Color.red(),
-        )
-
-        embed.add_field(
-            name="Reason For Rejection", value=self.children[0].value, inline=False
+            title="User Blocked",
+            description=f"User `{self.user.display_name}` Has Been Blocked From Submitting The Application",
+            color=0xFBEADC,
         )
 
         document = self.collection.find_one({"ID": self.user.id})
 
         if document:
             username = document.get("Username")
-
             self.collection.delete_one({"ID": self.user.id})
 
-            ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
-            await ConsoleChannel.send(f"whitelist remove {username}")
+        user = self.bot.get_user(self.user_id)
+        try:
+            await user.send(embed=embed)
+        except Exception as e:
+            print(f"Failed to send DM to user {self.user_id}: {e}")
 
-            self.collection.delete_one({"ID": self.user.id})
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
-            print(f"[ + ] Whitelist COG : User Removed : {self.user.id}")
+        message_id = interaction.message.id
 
-        await interaction.respond(embed=embed)
+        self.disable_all_items()
+        button.style = discord.ButtonStyle.secondary
+
+        self.main_embed.add_field(
+            name="User Blocked By",
+            value=f"{interaction.user.display_name}",
+            inline=False,
+        )
+
+        await interaction.message.edit(embed=self.main_embed, view=self)
+
+
+# =================================================================================================== #
 
 
 @commands.Cog.listener()
 async def on_ready(self):
     await self.bot.add_view(WhitelistButtons())
-    await self.bot.add_view(WhitelistRejectModal())
+    await self.bot.add_view(WhitelistApplication())
 
 
 def setup(bot):

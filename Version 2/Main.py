@@ -241,6 +241,8 @@ try:
     print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Crypto")
     print("[ + ] COGs Loaded")
+    bot.load_extension("COGS.InGame")
+    print("[ + ] COGs Loaded")
 except Exception as e:
     print(f"[ - ] Failed To Load COGs : {e}")
     traceback.print_exc()
