@@ -6,6 +6,7 @@ import discord
 import asyncio
 import datetime
 from datetime import datetime
+from discord.commands import *
 from pymongo import MongoClient
 from discord.ext.pages import *
 from discord.ext.bridge import BridgeSlashGroup
@@ -55,12 +56,7 @@ class Whitelist(commands.Cog):
                 json.dump([], f)
                 self.blocked = []
 
-        # self.bot.add_view(WhitelistButtons(user_id=0, user=None, bot=bot))
-        # self.bot.add_view(WhitelistRejectModal(bot=bot, user=None))
-
-    @bridge.bridge_group()
-    async def wl(self, ctx):
-        pass
+    wl = SlashCommandGroup(name="whitelist", description="Whitelist Commands")
 
     @wl.command(name="insert", description="Insert A User Into The Whitelist")
     async def insert(
@@ -354,7 +350,7 @@ class Whitelist(commands.Cog):
             error_channel = self.bot.get_channel(ERROR_CHANNEL)
             await error_channel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @bridge.bridge_command(
+    @commands.slash_command(
         name="whitelist",
         description="Whitelist Application For Fallen SMP",
         aliases=["wh"],
@@ -422,7 +418,7 @@ class Whitelist(commands.Cog):
             ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
             await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
-    @bridge.bridge_command(
+    @commands.slash_command(
         name="guide",
         description="Guide For Fallen SMP",
         aliases=["g"],
@@ -436,7 +432,7 @@ class Whitelist(commands.Cog):
 
         await ctx.respond(embed=embed, view=GuideMenu())
 
-    @bridge.bridge_command(
+    @commands.slash_command(
         name="rules",
         description="Rules For Fallen SMP",
         aliases=["r"],
@@ -951,7 +947,6 @@ class WhitelistModal(discord.ui.Modal):
 
         except Exception as e:
             print(f"[ - ] Whitelist COG : Error : {e}")
-
 
 
 # =================================================================================================== #

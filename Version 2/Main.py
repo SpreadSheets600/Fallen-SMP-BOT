@@ -3,6 +3,7 @@ import time
 import aiohttp
 
 import discord
+import traceback
 import COGS.Player
 import COGS.Whitelist
 from COGS.Player import *
@@ -38,15 +39,9 @@ class MyBot(commands.Bot):
         await self.add_cog(self.player_cog)
 
 
-def get_prefix(bot, message):
-    prefixes = ["FS!", "fs!"]
-    return commands.when_mentioned_or(*prefixes)(bot, message)
-
-
 intents = discord.Intents.all()
-bot = bridge.Bot(command_prefix=get_prefix, intents=intents)
+bot = discord.Bot(intents=intents)
 
-bot.remove_command("help")
 
 # ============================================================================== #
 
@@ -126,57 +121,6 @@ if mongo_client:
 
     print("[ + ] Sample Document Removed\n")
 
-if mongo_client:
-    db = mongo_client["Users"]
-    userdata_collection = db["UserData"]
-
-    existing_users = userdata_collection.find({})
-
-    stocks_collection = db["UserStocks"]
-    crypto_collection = db["UserCrypto"]
-
-    for user in existing_users:
-        user_id = user["_id"]
-        username = user["Username"]
-
-        stock_data = {
-            "ID": user_id,
-            "Username": username,
-            "StocksAmount": {"AMD": 0, "INTC": 0, "MSFT": 0, "AAPL": 0, "GOOGL": 0},
-            "StocksBuyPrice": {
-                "AMD_P": 0,
-                "INTC_P": 0,
-                "MSFT_P": 0,
-                "AAPL_P": 0,
-                "GOOGL_P": 0,
-            },
-            "Timestamp": f"{datetime.datetime.now().isoformat()}",
-        }
-
-        stocks_collection.insert_one(stock_data)
-
-        crypto_data = {
-            "ID": user_id,
-            "Username": username,
-            "CryptoAmount": {"BTC": 0, "ETH": 0, "BNB": 0, "SOL": 0, "AVAX": 0},
-            "CryptoBuyPrice": {
-                "BTC_P": 0,
-                "ETH_P": 0,
-                "BNB_P": 0,
-                "SOL_P": 0,
-                "AVAX_P": 0,
-            },
-            "Timestamp": f"{datetime.datetime.now().isoformat()}",
-        }
-
-        crypto_collection.insert_one(crypto_data)
-
-        stocks_collection.update_one({"ID": user_id}, {"$set": stock_data}, upsert=True)
-
-        crypto_collection.update_one(
-            {"ID": user_id}, {"$set": crypto_data}, upsert=True
-        )
-
 
 # =============================================================================== #
 
@@ -203,7 +147,7 @@ async def on_ready():
 # Basic Commands
 
 
-@bot.bridge_command(name="ping", description="Check The BOT's Response Time")
+@bot.slash_command(name="ping", description="Check The BOT's Response Time")
 async def ping(ctx: discord.ApplicationContext):
     latency = bot.latency * 1000
     uptime = datetime.datetime.now() - bot.up_time
@@ -220,7 +164,7 @@ async def ping(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed)
 
 
-@bot.bridge_command(
+@bot.slash_command(
     name="info",
     description="Get Bot Information",
 )
@@ -253,7 +197,7 @@ async def info(ctx: discord.ApplicationContext):
     await ctx.respond(embed=embed)
 
 
-@bot.bridge_command(
+@bot.slash_command(
     name="help",
     description="Get Commands List",
 )
@@ -280,38 +224,26 @@ async def on_slash_command_error(ctx, error):
     else:
         await ctx.respond("An Error Occurred")
 
-
-@bot.event
-async def on_bridge_command_error(ctx, error):
-    if isinstance(error, commands.errors.CommandOnCooldown):
-        await ctx.respond(
-            f"This Command Is On Cooldown. Try Again In {error.retry_after:.2f} Seconds"
-        )
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
-        await ctx.respond("You Are Missing Required Arguments")
-    elif isinstance(error, commands.errors.BadArgument):
-        await ctx.respond("Bad Argument Provided")
-    elif isinstance(error, commands.errors.CommandInvokeError):
-        await ctx.respond("An Error Occurred While Executing The Command")
-    elif isinstance(error, commands.errors.CommandNotFound):
-        await ctx.respond("Command Not Found")
-    elif isinstance(error, commands.errors.CheckFailure):
-        await ctx.respond("You Do Not Have Permission To Use This Command")
-    else:
-        await ctx.respond("An Error Occurred")
-
-
 # =============================================================================== #
 
 # Initialisation COGS
 
 try:
+    bot.load_extension("COGS.Moderation")
+    print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Whitelist")
+    print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Player")
+    print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Status")
+    print("[ + ] COGs Loaded")
+    bot.load_extension("COGS.Stocks")
+    print("[ + ] COGs Loaded")
+    bot.load_extension("COGS.Crypto")
     print("[ + ] COGs Loaded")
 except Exception as e:
     print(f"[ - ] Failed To Load COGs : {e}")
+    traceback.print_exc()
 
 # =============================================================================== #
 

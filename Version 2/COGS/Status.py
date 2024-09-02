@@ -6,11 +6,10 @@ import aiohttp
 import datetime
 import traceback
 from io import BytesIO
+from discord.ext import bridge
 from mcstatus import JavaServer
-from discord.ext.pages import *
 from discord.ext import commands, tasks
 from discord.ext.bridge import BridgeSlashGroup
-from discord.ext import commands, bridge, pages
 
 STATUS_FILE = "ServerStatus.json"
 ERROR_CHANNEL = 1275759089024241797
@@ -18,16 +17,14 @@ ERROR_CHANNEL = 1275759089024241797
 if os.path.exists(STATUS_FILE):
     with open(STATUS_FILE, "r") as f:
         data = json.load(f)
-        status_message_ids = data.get("message_ids", [])
-        status_channel_ids = data.get("channel_ids", [])
-
+        status_message_ids = data.get("status_message_ids", [])
+        status_channel_ids = data.get("status_channel_ids", [])
 else:
     status_message_ids = []
     status_channel_ids = []
 
 
 def get_server_status(host, port=25565):
-
     server = JavaServer.lookup(f"{host}:{port}")
     server_direct = JavaServer(host=host, port=port)
 
@@ -55,7 +52,6 @@ def get_server_status(host, port=25565):
 
 async def get_website_status(url):
     async with aiohttp.ClientSession() as session:
-
         try:
             async with session.get(url, timeout=10) as response:
                 latency = response.elapsed.total_seconds() * 1000
@@ -63,21 +59,21 @@ async def get_website_status(url):
                     return {"online": True, "latency": latency}
                 else:
                     return {"online": False}
-
-        except aiohttp.ClientError as e:
+        except aiohttp.ClientError:
             return {"online": False}
 
 
 class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.update_status.start()
 
-    @bridge.bridge_command(
+    @commands.slash_command(
         name="status",
         description="Get The Status Of A Minecraft Server",
     )
     async def status(self, ctx):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         server_info = get_server_status(host="pre-01.gbnodes.host", port=25610)
 
@@ -85,45 +81,29 @@ class Status(commands.Cog):
             embed = discord.Embed(
                 title=":green_circle: server Status - Online", color=0x00FF00
             )
-
-            embed.description = "|---------------------|\n""|    **Fallen SMP** - **1.21.x**   |\n" "|    **Uncharted Territory**    |\n" "|---------------------|"
-                                    
+            embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
             embed.set_author(name="FALLEN SMP")
-
             embed.add_field(
-                name="Players",
-                value=server_info.players.online,
-                inline=True,
+                name="Players", value=server_info.players.online, inline=True
             )
-
             embed.add_field(
                 name="Version",
                 value=server_info.version.name.split(" ")[1],
                 inline=True,
             )
-
             embed.add_field(
                 name="Software",
                 value=server_info.version.name.split(" ")[0],
                 inline=True,
             )
-
             embed.add_field(
-                name="Latency",
-                value=f"{server_info.latency:.2f} ms",
-                inline=True,
+                name="Latency", value=f"{server_info.latency:.2f} ms", inline=True
             )
-
             embed.add_field(
-                name="Server IP",
-                value="IP : `play.fallensmp.xyz`",
-                inline=False,
+                name="Server IP", value="IP : `play.fallensmp.xyz`", inline=False
             )
-
             embed.add_field(
-                name="Server Website",
-                value="https://fallensmp.xyz",
-                inline=False,
+                name="Server Website", value="https://fallensmp.xyz", inline=False
             )
 
             icon_base64 = server_info.icon
@@ -132,78 +112,54 @@ class Status(commands.Cog):
                 image = BytesIO(image_data)
                 image.seek(0)
                 file = discord.File(image, filename="ICON.png")
-
                 embed.set_thumbnail(url="attachment://ICON.png")
 
             embed.set_footer(text=f"Last Updated ")
             embed.timestamp = datetime.datetime.now()
 
             await ctx.send(embed=embed, file=file)
-
         else:
             embed = discord.Embed(
                 title=":red_circle: Server Status - Offline", color=0xFF0000
             )
-
-            embed.description = "|---------------------|\n""|    **Fallen SMP** - **1.21.x**   |\n" "|    **Uncharted Territory**    |\n" "|---------------------|"
-
+            embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
             embed.set_author(name="FALLEN SMP")
-
+            embed.add_field(name="Players", value="0", inline=True)
+            embed.add_field(name="Version", value="Unknown", inline=True)
+            embed.add_field(name="Software", value="Unknown", inline=True)
+            embed.add_field(name="Latency", value="Unknown", inline=True)
             embed.add_field(
-                name="Players",
-                value="0",
-                inline=True,
+                name="Server IP", value="IP : `play.fallensmp.xyz`", inline=False
             )
-
             embed.add_field(
-                name="Version",
-                value="Unknown",
-                inline=True,
-            )
-
-            embed.add_field(
-                name="Software",
-                value="Unknown",
-                inline=True,
-            )
-
-            embed.add_field(
-                name="Latency",
-                value="Unknown",
-                inline=True,
-            )
-
-            embed.add_field(
-                name="Server IP",
-                value="IP : `play.fallensmp.xyz`",
-                inline=False,
-            )
-
-            embed.add_field(
-                name="Server Website",
-                value="https://fallensmp.xyz",
-                inline=False,
+                name="Server Website", value="https://fallensmp.xyz", inline=False
             )
 
             await ctx.send(embed=embed)
 
-    @bridge.bridge_command(
+    @commands.slash_command(
         name="permstatus",
         description="Get The Permanent Status Of A Minecraft Server",
     )
     async def permstatus(self, ctx):
+        await ctx.defer(ephemeral=True)
+
         if ctx.author.id != 727012870683885578:
             await ctx.send("Right Now This Command Is Only Available To SOHAM")
-
         else:
-            status_message = await ctx.send("Setting Up The Permanent Status Message .... ")
+            status_message = await ctx.send(
+                "Setting Up The Permanent Status Message .... "
+            )
 
             status_message_ids.append(status_message.id)
             status_channel_ids.append(status_message.channel.id)
 
             with open(STATUS_FILE, "w") as f:
                 json.dump(
-                    {"status_message_ids": status_message_ids, "status_channel_ids": status_channel_ids},
+                    {
+                        "status_message_ids": status_message_ids,
+                        "status_channel_ids": status_channel_ids,
+                    },
                     f,
                 )
             await status_message.add_reaction("✅")
@@ -215,51 +171,41 @@ class Status(commands.Cog):
             channel = self.bot.get_channel(channel_id)
 
             if channel is None:
-                return
-            
-            try: 
+                continue
+
+            try:
                 message = await channel.fetch_message(message_id)
-                server_info = get_server_status(host="pre-01.gbnodes.host", port=25610)
+                server_info = get_server_status(host="in4-b.potenfyr.in", port=25565)
 
                 if server_info:
                     embed = discord.Embed(
                         title=":green_circle: Server Status - Online", color=0x00FF00
                     )
-
-                    embed.description = "|---------------------|\n""|    **Fallen SMP** - **1.21.x**   |\n" "|    **Uncharted Territory**    |\n" "|---------------------|"
-
+                    embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
                     embed.set_author(name="FALLEN SMP")
-
                     embed.add_field(
-                        name="Players",
-                        value=server_info.players.online,
-                        inline=True,
+                        name="Players", value=server_info.players.online, inline=True
                     )
-
                     embed.add_field(
                         name="Version",
                         value=server_info.version.name.split(" ")[1],
                         inline=True,
                     )
-
                     embed.add_field(
                         name="Software",
                         value=server_info.version.name.split(" ")[0],
                         inline=True,
                     )
-
                     embed.add_field(
                         name="Latency",
                         value=f"{server_info.latency:.2f} ms",
                         inline=True,
                     )
-
                     embed.add_field(
                         name="Server IP",
                         value="IP : `play.fallensmp.xyz`",
                         inline=False,
                     )
-
                     embed.add_field(
                         name="Server Website",
                         value="https://fallensmp.xyz",
@@ -272,38 +218,53 @@ class Status(commands.Cog):
                         image = BytesIO(image_data)
                         image.seek(0)
                         file = discord.File(image, filename="ICON.png")
-
                         embed.set_thumbnail(url="attachment://ICON.png")
-                        
-                    timestamp = str(datetime.datetime.now())
-                    dsicord_timestamp = discord.utils.parse_time(timestamp)
-                    formatted_timestamp = discord.utils.format_dt(datetime.datetime.now(), style='f')
-                    embed.set_footer(text=f"Updates Every 30 S | Last Updated ")
+
+                    embed.set_footer(text=f"Updates Every 30 Seconds | Last Updated ")
                     embed.timestamp = datetime.datetime.now()
 
-                    await message.edit("",embed=embed, file=file)
+                    await message.edit(content="", embed=embed, file=file)
+                else:
+                    embed = discord.Embed(
+                        title=":red_circle: Server Status - Offline", color=0xFF0000
+                    )
+                    embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
+                    embed.set_author(name="FALLEN SMP")
+                    embed.add_field(name="Players", value="0", inline=True)
+                    embed.add_field(name="Version", value="Unknown", inline=True)
+                    embed.add_field(name="Software", value="Unknown", inline=True)
+                    embed.add_field(name="Latency", value="Unknown", inline=True)
+                    embed.add_field(
+                        name="Server IP",
+                        value="IP : `play.fallensmp.xyz`",
+                        inline=False,
+                    )
+                    embed.add_field(
+                        name="Server Website",
+                        value="https://fallensmp.xyz",
+                        inline=False,
+                    )
+
+                    await message.edit(content="", embed=embed)
 
             except Exception as e:
                 print(f"[ - ] Status COG : Error : {e}")
-
                 traceback.print_exc()
-
 
     @commands.Cog.listener()
     async def on_ready(self):
-
         print("[ + ] Status COG : OnReady")
-        self.update_status.start()
-
+        if not self.update_status.is_running():
+            self.update_status.start()
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         if user.id == 727012870683885578:
             if reaction.emoji == "✅":
-                
                 await reaction.message.remove_reaction("✅", user)
                 await reaction.message.add_reaction("✅")
                 await self.update_status()
+
 
 def setup(bot):
     bot.add_cog(Status(bot))

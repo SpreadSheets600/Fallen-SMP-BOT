@@ -12,6 +12,7 @@ import mysql.connector as mysql
 from pymongo import MongoClient
 from discord.ext.pages import *
 from mysql.connector import Error
+from discord.commands import SlashCommandGroup
 from discord.ext.bridge import BridgeSlashGroup
 from discord.ext import commands, bridge, pages
 
@@ -69,22 +70,19 @@ ERROR_CHANNEL = 1275759089024241797
 class Player(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # self.connection, self.cursor = database_connection()
 
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
         self.collection = self.db["UserData"]
 
-    @bridge.bridge_group()
-    async def pl(self, ctx):
-        pass
+    pl = SlashCommandGroup(name="player", description="Player Commands")
 
     @pl.command(
         name="info",
         description="Get Information About A Player",
     )
     async def pl_info(self, ctx, player: discord.Member):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         if player == None:
             player = ctx.author
@@ -93,8 +91,8 @@ class Player(commands.Cog):
             document = self.collection.find_one({"ID": player.id})
 
             if document:
-                username = document.get("Username")
                 gender = document.get("Gender")
+                username = document.get("Username")
                 backstory = document.get("Backstory")
                 timestamp = document.get("Timestamp")
 
@@ -135,13 +133,12 @@ class Player(commands.Cog):
             else:
                 embed = discord.Embed(
                     title=":x: Player Data Not Found",
-                    description="It Seems Like There Isn't Any Data For You. Make Sure To Submit The Whitelist Application.",
+                    description="It Seems Like There Isn't Any Data For The Player. Player Must Submit The Whitelist Application.",
                     color=discord.Color.red(),
                 )
                 await ctx.respond(embed=embed, ephemeral=True)
 
         except Exception as e:
-            # print(f"[ - ] Player COG : Error : {e}")
             await ctx.respond(
                 f"[ - ] Player COG : Error : \n```{e}```",
                 ephemeral=True,
@@ -151,20 +148,18 @@ class Player(commands.Cog):
             ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
             await ErrorChannel.send(f"[ - ] Player COG : Error : \n```{e}```")
 
-            traceback.print_exc()
-
     @pl.command(
         name="stats",
         description="Get Stats About A Player",
     )
     async def pl_stats(self, ctx, player: discord.Member = None):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
 
         if player is None:
             player = ctx.author
 
         def convert_time(seconds):
-            seconds = seconds//20
+            seconds = seconds // 20
             minutes = seconds // 60
             hours = minutes // 60
             days = hours // 24
@@ -183,7 +178,7 @@ class Player(commands.Cog):
                 ConsoleChannel = self.bot.get_channel(CONSOLE_CHANNEL)
                 await ConsoleChannel.send(f"zstats update {username}")
 
-                try :
+                try:
                     connection = mysql.connect(
                         host=os.getenv("STATZ_DB_HOST"),
                         user=os.getenv("STATZ_DB_USER"),
@@ -232,7 +227,7 @@ class Player(commands.Cog):
                     "BALANCE": 0,
                 }
 
-                try :
+                try:
                     connection = mysql.connect(
                         host=os.getenv("STATZ_DB_HOST"),
                         user=os.getenv("STATZ_DB_USER"),
@@ -346,14 +341,11 @@ class Player(commands.Cog):
                 await ctx.respond(embed=embed, ephemeral=True)
 
         except Exception as e:
-            # print(f"[ - ] Player COG : Error : {e}")
             await ctx.respond(
                 f"[ - ] Player COG : Error : \n```{e}```",
                 ephemeral=True,
                 delete_after=5,
             )
-
-            traceback.print_exc()
 
 
 # =================================================================================================== #
@@ -398,6 +390,8 @@ class Additional_Statisitcs(discord.ui.View):
         label="View Additional Stats", style=discord.ButtonStyle.secondary
     )
     async def view_button_callback(self, button, interaction):
+
+        await interaction.response.defer(ephemeral=True)
 
         embed = discord.Embed(
             title="Additional Statistics",
@@ -465,13 +459,13 @@ class Additional_Statisitcs(discord.ui.View):
             inline=True,
         )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="Balance", style=discord.ButtonStyle.secondary)
     async def balance_button_callback(self, button, interaction):
 
         await interaction.response.defer(ephemeral=True)
-        msg_id = await interaction.followup.send("Fetching Balance...", ephemeral=True)
+        msg_id = await interaction.followup.send("Fetching Balance ...", ephemeral=True)
 
         chan_id = interaction.channel_id
 
@@ -499,6 +493,7 @@ class Additional_Statisitcs(discord.ui.View):
 
             balance_raw = msg[-1][1:]
             balance = balance_raw.split(".")[0]
+            balance = balance.replace(",", "")
 
             balance = int(balance)
             balance = round(balance)

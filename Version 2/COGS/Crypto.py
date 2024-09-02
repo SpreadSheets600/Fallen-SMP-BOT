@@ -10,6 +10,7 @@ from discord import *
 from pymongo import MongoClient
 from discord.ext.pages import *
 from discord.ext.bridge import *
+from discord.commands import SlashCommandGroup
 from discord.ext.bridge import BridgeSlashGroup
 from discord.ext import commands, bridge, pages
 
@@ -47,46 +48,24 @@ class Crypto(commands.Cog):
         self.bot = bot
 
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
+
         self.db = self.mongo_client["Users"]
         self.collection = self.db["UserCrypto"]
 
         self.finnhub_client = finnhub.Client(api_key=os.getenv("FINNHUB_API_KEY"))
-
-        self.name = ""
-        self.price = 0
-        self.symbol = ""
-        self.balance = 0
-        self.user_id = 0
-        self.quantity = 0
-        self.buy_price = 0
-        self.channel_id = 0
-        self.track_message = 0
-
-    def reset_purchase_details(self):
-        self.name = ""
-        self.price = 0
-        self.symbol = ""
-        self.balance = 0
-        self.user_id = 0
-        self.quantity = 0
-        self.buy_price = 0
-        self.channel_id = 0
-        self.track_message = 0
 
     def fetch_news(self, symbol):
         today = datetime.datetime.today()
         date = today.strftime("%Y-%m-%d")
         return self.finnhub_client.company_news(symbol, _from=date, to=date)
 
-    @bridge.bridge_group()
-    async def crypto(self, ctx):
-        pass
+    crypto = SlashCommandGroup(name="crypto", description="Crypto Commands")
 
     @crypto.command(
         name="quote",
         description="Get The Current Price Of A Crypto",
     )
-    @bridge_option(
+    @option(
         "symbol",
         description="The Crypto Symbol",
         choices=["BTC", "ETH", "BNB", "SOL", "AVAX"],
@@ -152,7 +131,7 @@ class Crypto(commands.Cog):
         name="company",
         description="Get Company Information",
     )
-    @bridge_option(
+    @option(
         "symbol",
         description="The Crypto Symbol",
         choices=["BTC", "ETH", "BNB", "SOL", "AVAX"],
@@ -339,12 +318,12 @@ class Crypto(commands.Cog):
         name="buy",
         description="Buy Crypto (Minecraft Economy)",
     )
-    @bridge_option(
+    @option(
         "symbol",
         description="The Crypto Symbol",
         choices=["BTC", "ETH", "BNB", "SOL", "AVAX"],
     )
-    @bridge_option("quantity", description="The Quantity Of Crypto To Buy", type=int)
+    @option("quantity", description="The Quantity Of Crypto To Buy", type=int)
     async def buy(self, ctx, symbol: str, quantity: int):
         await ctx.defer(ephemeral=True)
 
@@ -467,12 +446,12 @@ class Crypto(commands.Cog):
         name="sell",
         description="Sell Crypto (Minecraft Economy)",
     )
-    @bridge_option(
+    @option(
         "symbol",
         description="The Crypto Symbol",
         choices=["BTC", "ETH", "BNB", "SOL", "AVAX"],
     )
-    @bridge_option("quantity", description="The Quantity Of Crypto To Sell", type=int)
+    @option("quantity", description="The Quantity Of Crypto To Sell", type=int)
     async def sell(self, ctx, symbol: str, quantity: int):
         await ctx.defer(ephemeral=True)
 
@@ -562,8 +541,7 @@ class Crypto(commands.Cog):
                     color=0xFF0000,
                 )
                 return await ctx.respond(embed=embed, ephemeral=True)
-            
-            
+
             if m.content:
                 balance_raw = m.content.split(" ")[-1][1:]
                 balance = balance_raw.split(".")[0]
@@ -587,6 +565,7 @@ class Crypto(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
             print(f"[ - ] Crypto COG : Error : {e}")
+
 
 def setup(bot):
     bot.add_cog(Crypto(bot))
