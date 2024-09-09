@@ -2,12 +2,15 @@ import os
 import time
 import aiohttp
 
+import base64
 import discord
 import traceback
 import COGS.Player
 import COGS.Whitelist
+from io import BytesIO
 from COGS.Player import *
 from COGS.Whitelist import *
+from mcstatus import JavaServer
 from datetime import datetime, timedelta
 from discord.ext import commands, bridge
 from discord.commands import SlashCommandGroup
@@ -224,6 +227,104 @@ async def on_slash_command_error(ctx, error):
     else:
         await ctx.respond("An Error Occurred")
 
+
+# =============================================================================== #
+
+
+def get_server_status(host, port=25565):
+    server = JavaServer.lookup(f"{host}:{port}")
+    server_direct = JavaServer(host=host, port=port)
+
+    try:
+        status = server.status()
+        player_count = status.players.online
+        motd = status.description
+        latency = status.latency
+
+        try:
+            query = server.query()
+            player_list = query.players.names
+            map_name = query.map
+            version = query.software.version
+        except Exception:
+            player_list = []
+            map_name = "Unknown"
+            version = "Unknown"
+
+        return server_direct.status()
+
+    except Exception:
+        return {"online": False}
+
+
+@commands.slash_command(
+    name="status",
+    description="Get The Status Of A Minecraft Server",
+)
+async def status(self, ctx):
+    await ctx.defer(ephemeral=True)
+
+    server_info = get_server_status(host="pre-01.gbnodes.host", port=25610)
+
+    if server_info:
+        embed = discord.Embed(
+            title=":green_circle: server Status - Online", color=0x00FF00
+        )
+        embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
+        embed.set_author(name="FALLEN SMP")
+        embed.add_field(name="Players", value=server_info.players.online, inline=True)
+        embed.add_field(
+            name="Version",
+            value=server_info.version.name.split(" ")[1],
+            inline=True,
+        )
+        embed.add_field(
+            name="Software",
+            value=server_info.version.name.split(" ")[0],
+            inline=True,
+        )
+        embed.add_field(
+            name="Latency", value=f"{server_info.latency:.2f} ms", inline=True
+        )
+        embed.add_field(
+            name="Server IP", value="IP : `play.fallensmp.xyz`", inline=False
+        )
+        embed.add_field(
+            name="Server Website", value="https://fallensmp.xyz", inline=False
+        )
+
+        icon_base64 = server_info.icon
+        if icon_base64:
+            image_data = base64.b64decode(icon_base64.split(",")[1])
+            image = BytesIO(image_data)
+            image.seek(0)
+            file = discord.File(image, filename="ICON.png")
+            embed.set_thumbnail(url="attachment://ICON.png")
+
+        embed.set_footer(text=f"Last Updated ")
+        embed.timestamp = datetime.datetime.now()
+
+        await ctx.send(embed=embed, file=file)
+    else:
+        embed = discord.Embed(
+            title=":red_circle: Server Status - Offline", color=0xFF0000
+        )
+        embed.description = "|---------------------|\n|    **Fallen SMP** - **1.21.x**   |\n|    **Uncharted Territory**    |\n|---------------------|"
+        embed.set_author(name="FALLEN SMP")
+        embed.add_field(name="Players", value="0", inline=True)
+        embed.add_field(name="Version", value="Unknown", inline=True)
+        embed.add_field(name="Software", value="Unknown", inline=True)
+        embed.add_field(name="Latency", value="Unknown", inline=True)
+        embed.add_field(
+            name="Server IP", value="IP : `play.fallensmp.xyz`", inline=False
+        )
+        embed.add_field(
+            name="Server Website", value="https://fallensmp.xyz", inline=False
+        )
+
+        await ctx.send(embed=embed)
+
+
 # =============================================================================== #
 
 # Initialisation COGS
@@ -234,8 +335,6 @@ try:
     bot.load_extension("COGS.Whitelist")
     print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Player")
-    print("[ + ] COGs Loaded")
-    bot.load_extension("COGS.Status")
     print("[ + ] COGs Loaded")
     bot.load_extension("COGS.Stocks")
     print("[ + ] COGs Loaded")

@@ -128,93 +128,6 @@ class Crypto(commands.Cog):
             await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
 
     @crypto.command(
-        name="company",
-        description="Get Company Information",
-    )
-    @option(
-        "symbol",
-        description="The Crypto Symbol",
-        choices=["BTC", "ETH", "BNB", "SOL", "AVAX"],
-    )
-    async def company(self, ctx, symbol):
-
-        await ctx.defer(ephemeral=True)
-
-        valid_symbols = ["BTC", "ETH", "BNB", "SOL", "AVAX"]
-
-        if symbol not in valid_symbols:
-            embed = discord.Embed(
-                title="Invalid Symbol",
-                description="Please Enter A Valid Symbol",
-                color=0xFF0000,
-            )
-
-            embed.add_field(
-                name="Valid Symbols",
-                value="ETH, BTC, BNB, SOL, AVAX",
-                inline=True,
-            )
-
-            await ctx.respond(embed=embed, ephemeral=True)
-            return
-
-        symbols = {
-            "BTC": "BTC-USD",
-            "ETH": "ETH-USD",
-            "BNB": "BNB-USD",
-            "SOL": "SOL-USD",
-            "AVAX": "AVAX-USD",
-        }
-
-        try:
-            main_symbol = symbols[symbol]
-        except Exception as e:
-            main_symbol = symbol.upper()
-
-        try:
-            company = self.finnhub_client.company_profile2(symbol=main_symbol)
-
-            if company:
-                name = company.get("name", "N/A")
-                ipo = company.get("ipo", "N/A")
-                industry = company.get("finnhubIndustry", "N/A")
-                market_cap = company.get("marketCapitalization", "N/A")
-                country = company.get("country", "N/A")
-                shares_outstanding = company.get("shareOutstanding", "N/A")
-                logo = company.get("logo", "")
-                weburl = company.get("weburl", "")
-
-                embed = discord.Embed(
-                    title=f"{symbol.upper()} Company Information",
-                    description=(
-                        f"### Name: {name}\n\n"
-                        f"### IPO: {ipo}\n\n"
-                        f"### Country: {country}\n"
-                        f"### Industry: {industry}\n"
-                        f"### Share Outstanding: {shares_outstanding}"
-                        f"### Market Capitalization: {market_cap}\n"
-                    ),
-                    color=discord.Color.green(),
-                )
-
-                if logo:
-                    embed.set_thumbnail(url=logo)
-                if weburl:
-                    embed.url = weburl
-
-                await ctx.respond(embed=embed, ephemeral=True)
-
-        except Exception as e:
-            print(f"[ - ] Whitelist COG : Error : {e}")
-            await ctx.respond(
-                f"[ - ] Whitelist COG : Error : \n```{e}```",
-                ephemeral=True,
-                delete_after=5,
-            )
-            ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
-            await ErrorChannel.send(f"[ - ] Whitelist COG : Error : \n```{e}```")
-
-    @crypto.command(
         name="portfolio",
         description="Get User Portfolio",
     )
@@ -239,9 +152,9 @@ class Crypto(commands.Cog):
             }
 
             if document:
-                timestamp = document["Timestamp"]
                 stocks_amount = document["CryptoAmount"]
                 stocks_buy_price = document["CryptoBuyPrice"]
+                timestamp = datetime.datetime.now().isoformat()
 
                 for keys in stocks_amount.keys():
                     if stocks_buy_price[f"{keys}_P"] == 0:
