@@ -418,7 +418,7 @@ class Crypto(commands.Cog):
                 return await ctx.respond(embed=embed, ephemeral=True)
 
             current_amount = document["CryptoAmount"].get(main_symbol, 0)
-            if current_amount < quantity:
+            if current_amount > quantity:
                 embed = discord.Embed(
                     title="Insufficient Crypto",
                     description="You Don't Have Enough Crypto To Sell",
