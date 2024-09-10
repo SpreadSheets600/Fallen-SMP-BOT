@@ -240,7 +240,7 @@ class Stocks(commands.Cog):
             }
 
             if document:
-                timestamp = document["Timestamp"]
+                timestamp = datetime.datetime.now().isoformat()
                 stocks_amount = document["StocksAmount"]
                 stocks_buy_price = document["StocksBuyPrice"]
 
