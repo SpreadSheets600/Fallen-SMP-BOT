@@ -853,20 +853,21 @@ class WhitelistModal(discord.ui.Modal):
                 )
                 return
 
-            if answer.lower() not in self.qna[self.ques]:
-                embed = discord.Embed(
-                    title="Whitelist Form Not Submitted",
-                    description="### Incorrect Answer\nYou Must Answer The Question Correctly",
-                    color=discord.Color.red(),
-                )
+            if isinstance(self.qna[self.ques], list):
+                if answer.lower() not in self.qna[self.ques]:
+                    embed = discord.Embed(
+                        title="Whitelist Form Not Submitted",
+                        description="### Incorrect Answer\nYou Must Answer The Question Correctly",
+                        color=discord.Color.red(),
+                    )
 
-                await interaction.user.send(embed=embed)
-                await interaction.followup.send(
-                    f"<@{interaction.user.id}>",
-                    embed=embed,
-                    ephemeral=True,
-                )
-                return
+                    await interaction.user.send(embed=embed)
+                    await interaction.followup.send(
+                        f"<@{interaction.user.id}>",
+                        embed=embed,
+                        ephemeral=True,
+                    )
+                    return
 
             if len(character_backstory) > 3000:
                 embed = discord.Embed(
