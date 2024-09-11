@@ -157,6 +157,7 @@ class InGame(commands.Cog):
         await ctx.defer(ephemeral=True)
         user_id = ctx.author.id
         document = self.collection.find_one({"ID": user_id})
+
         if not document:
             embed = discord.Embed(
                 title=":x: Error",
@@ -169,6 +170,8 @@ class InGame(commands.Cog):
             connection = get_db_connection()
             cursor = connection.cursor()
             week_no = datetime.now().isocalendar()[1]
+
+            username = document["Username"]
 
             cursor.execute(
                 "SELECT amount FROM tax_data WHERE user_id = ? AND week_no = ?",
@@ -271,6 +274,19 @@ class InGame(commands.Cog):
         self, ctx, user_id, amount, week_no, cursor, connection
     ):
         try:
+
+            document = self.collection.find_one({"ID": user_id})
+
+            if not document:
+                embed = discord.Embed(
+                    title=":x: Payment Failed",
+                    description="User Not Registered In The Database",
+                    color=0xFF0000,
+                )
+                await ctx.respond(embed=embed, ephemeral=True)
+
+            username = document["Username"]
+
             cursor.execute(
                 """
                 UPDATE tax_data
@@ -281,7 +297,7 @@ class InGame(commands.Cog):
             )
             connection.commit()
             console_channel = self.bot.get_channel(CONSOLE_CHANNEL)
-            await console_channel.send(f"eco take {ctx.author.name} {amount}")
+            await console_channel.send(f"eco take {username} {amount}")
 
             def check(message):
                 return (
