@@ -134,23 +134,11 @@ class Crypto(commands.Cog):
     async def portfolio(self, ctx, user: discord.Member = None):
         await ctx.defer(ephemeral=True)
 
-        if not user:
+        if user is None or ctx.author.id not in ADMINS:
             user = ctx.author
 
-        if user:
-            if ctx.author.id not in ADMINS:
-                if user.id not in MODS:
-                    embed = discord.Embed(
-                        title="Unauthorized",
-                        description="You Are Not Authorized To View Other User's Portfolio",
-                        color=0xFF0000,
-                    )
-
-                    await ctx.respond(embed=embed, ephemeral=True)
-                    return
-
         try:
-            document = self.collection.find_one({"ID": ctx.author.id})
+            document = self.collection.find_one({"ID": user.id})
 
             ETH_current_price = self.finnhub_client.quote(symbol="ETH-USD")["c"]
             BTC_current_price = self.finnhub_client.quote(symbol="BTC-USD")["c"]
@@ -188,7 +176,7 @@ class Crypto(commands.Cog):
                 discord_timestamp = f"<t:{unix_timestamp}>"
 
                 embed = discord.Embed(
-                    title=f"{ctx.author.display_name} 's Portfolio",
+                    title=f"{user.display_name} 's Portfolio",
                     description=f"Last Updated : {discord_timestamp}",
                     color=0xD5E4CF,
                 )

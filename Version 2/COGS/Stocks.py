@@ -220,26 +220,14 @@ class Stocks(commands.Cog):
         description="Get User Portfolio",
     )
     async def portfolio(self, ctx, user: discord.Member=None):
-
-        if not user:
-            user = ctx.author
-
-        if user:
-            if ctx.author.id not in ADMINS:
-                if user.id not in MODS:
-                    embed = discord.Embed(
-                        title="Unauthorized",
-                        description="You Are Not Authorized To View Other User's Portfolio",
-                        color=0xFF0000,
-                    )
-
-                    await ctx.respond(embed=embed, ephemeral=True)
-                    return
-
         await ctx.defer(ephemeral=True)
 
+        if user is None or ctx.author.id not in ADMINS:
+            user = ctx.author
+
+
         try:
-            document = self.collection.find_one({"ID": ctx.author.id})
+            document = self.collection.find_one({"ID": user.id})
 
             amd_current_price = self.finnhub_client.quote(symbol="AMD")["c"]
             apple_current_price = self.finnhub_client.quote(symbol="AAPL")["c"]
