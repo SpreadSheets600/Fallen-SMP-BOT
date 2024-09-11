@@ -383,7 +383,9 @@ class Whitelist(commands.Cog):
             with open("BLOCKED.json", "r") as f:
                 self.blocked = json.load(f)
 
-                blocked_data = self.blocked["Blocked"]
+                blocked_data = self.blocked.get("Blocked", [])
+                if not isinstance(blocked_data, list):
+                    blocked_data = []
 
             if ctx.author.id in blocked_data:
                 embed = discord.Embed(
@@ -1024,7 +1026,8 @@ class WhitelistButtons(discord.ui.View):
         global COOLDOWN_ACTIVE
         if COOLDOWN_ACTIVE:
             await interaction.response.send_message(
-                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations\nBot Is Performing DB Operations", ephemeral=True
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations\nBot Is Performing DB Operations",
+                ephemeral=True,
             )
             return
 
@@ -1102,7 +1105,8 @@ class WhitelistButtons(discord.ui.View):
         global COOLDOWN_ACTIVE
         if COOLDOWN_ACTIVE:
             await interaction.response.send_message(
-                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations", ephemeral=True
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations",
+                ephemeral=True,
             )
             return
 
@@ -1170,7 +1174,8 @@ class WhitelistButtons(discord.ui.View):
         global COOLDOWN_ACTIVE
         if COOLDOWN_ACTIVE:
             await interaction.response.send_message(
-                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations", ephemeral=True
+                "Please Wait For The Cooldown To End\nBot Is Performing DB Operations",
+                ephemeral=True,
             )
             return
 
