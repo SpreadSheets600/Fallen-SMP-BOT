@@ -325,6 +325,37 @@ async def status(self, ctx):
         await ctx.send(embed=embed)
 
 
+LOG_CHANNEL_ID = 1275759089024241797
+
+
+@bot.event
+async def on_command(ctx):
+    log_channel = bot.get_channel(LOG_CHANNEL_ID)
+    if log_channel:
+        user = ctx.author
+        command = ctx.command
+        current_time = int(time.time())  # Get current Unix timestamp
+
+        embed = discord.Embed(
+            title="Command Executed",
+            description=(
+                f"**User :** {user.mention} ( `{user.id}` )\n\n"
+                f"**Command :** `{command}`\n"
+                f"**Channel :** {ctx.channel.mention}\n\n"
+                f"**Time :** <t:{current_time}:F>"
+            ),
+            color=discord.Color.blue(),
+        )
+
+        if user.avatar.url:
+            embed.set_thumbnail(url=user.avatar.url)
+
+        else:
+            pass
+
+        await log_channel.send(embed=embed)
+
+
 # =============================================================================== #
 
 # Initialisation COGS

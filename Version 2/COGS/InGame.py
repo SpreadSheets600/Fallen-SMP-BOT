@@ -186,6 +186,9 @@ class InGame(commands.Cog):
                 )
                 await ctx.respond(embed=embed, ephemeral=True)
             else:
+
+                week_no = week_no + 1
+
                 amount = result[0]
                 await self.execute_auto_payment(
                     ctx, user_id, amount, week_no, cursor, connection
@@ -219,7 +222,7 @@ class InGame(commands.Cog):
             amount, last_pay_date, week_no = result
             embed = discord.Embed(
                 title="Tax Info",
-                description=f"**Amount :** `{amount}`\n**Last Pay Date :** `{last_pay_date}`\n**Week No :** `{week_no}`",
+                description=f"\n### Week No : `{week_no}`\n\n## Amount : `{amount}`\n## Last Pay Date : `{last_pay_date}`",
                 color=0x00FF00,
             )
             await ctx.respond(embed=embed, ephemeral=True)
@@ -262,7 +265,7 @@ class InGame(commands.Cog):
 
             embed = discord.Embed(
                 title=":white_check_mark: Success",
-                description=f"Updated Tax Amount To `{amount}`",
+                description=f"### Updated Tax Amount To `{amount}`",
                 color=0x00FF00,
             )
             await ctx.respond(embed=embed, ephemeral=True)
@@ -301,7 +304,7 @@ class InGame(commands.Cog):
 
             def check(message):
                 return (
-                    message.author.id == 1261353536206274672
+                    message.author.id == 1270255175579471963
                     and message.channel.id == CONSOLE_CHANNEL
                 )
 
@@ -317,7 +320,7 @@ class InGame(commands.Cog):
             if message.content.startswith("$"):
                 embed = discord.Embed(
                     title=":white_check_mark: Payment Success",
-                    description=f"Paid `{amount}` Taxes",
+                    description=f"### Paid `{amount}` Taxes",
                     color=0x00FF00,
                 )
                 await ctx.respond(embed=embed, ephemeral=True)

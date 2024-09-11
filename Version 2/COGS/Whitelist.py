@@ -382,10 +382,7 @@ class Whitelist(commands.Cog):
 
             with open("BLOCKED.json", "r") as f:
                 self.blocked = json.load(f)
-
-                blocked_data = self.blocked.get("Blocked", [])
-                if not isinstance(blocked_data, list):
-                    blocked_data = []
+                blocked_data = self.blocked
 
             if ctx.author.id in blocked_data:
                 embed = discord.Embed(
