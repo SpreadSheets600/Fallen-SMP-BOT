@@ -265,7 +265,7 @@ class Stocks(commands.Cog):
                 discord_timestamp = f"<t:{unix_timestamp}>"
 
                 embed = discord.Embed(
-                    title=f"{ctx.author.display_name} 's Portfolio",
+                    title=f"{user.display_name} 's Portfolio",
                     description=f"Last Updated : {discord_timestamp}",
                     color=0xD5E4CF,
                 )
