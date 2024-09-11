@@ -131,8 +131,23 @@ class Crypto(commands.Cog):
         name="portfolio",
         description="Get User Portfolio",
     )
-    async def portfolio(self, ctx):
+    async def portfolio(self, ctx, user: discord.Member = None):
         await ctx.defer(ephemeral=True)
+
+        if not user:
+            user = ctx.author
+
+        if user:
+            if ctx.author.id not in ADMINS:
+                if user.id not in MODS:
+                    embed = discord.Embed(
+                        title="Unauthorized",
+                        description="You Are Not Authorized To View Other User's Portfolio",
+                        color=0xFF0000,
+                    )
+
+                    await ctx.respond(embed=embed, ephemeral=True)
+                    return
 
         try:
             document = self.collection.find_one({"ID": ctx.author.id})
