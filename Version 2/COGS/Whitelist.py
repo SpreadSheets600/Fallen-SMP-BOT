@@ -574,7 +574,7 @@ class WhitelistApplication(discord.ui.View):
                 color=0x2F3136,
             )
 
-            await interaction.folloup.send(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="Form", style=discord.ButtonStyle.secondary)
     async def whitelist_form(self, button, interaction):

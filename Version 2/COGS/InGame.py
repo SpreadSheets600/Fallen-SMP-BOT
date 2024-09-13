@@ -211,6 +211,7 @@ class InGame(commands.Cog):
         )
         result = cursor.fetchone()
 
+
         if not result:
             embed = discord.Embed(
                 title=":x: Error",
@@ -220,9 +221,11 @@ class InGame(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
         else:
             amount, last_pay_date, week_no = result
+            next_pay_date = result[1] + timedelta(weeks=1)
+
             embed = discord.Embed(
                 title="Tax Info",
-                description=f"\n### Week No : `{week_no}`\n\n## Amount : `{amount}`\n## Last Pay Date : `{last_pay_date}`",
+                description=f"\n### Week No : `{week_no}`\n\n## Amount : `{amount}`\n## Last Pay Date : `{last_pay_date}`\n## Next Pay Date : `{next_pay_date}`",
                 color=0x00FF00,
             )
             await ctx.respond(embed=embed, ephemeral=True)
