@@ -60,7 +60,7 @@ def initialize_db():
                 user_id INTEGER PRIMARY KEY,
                 amount REAL,
                 last_pay_date DATE,
-                week_no INTEGER
+                next_pay_date DATE
             )
         """
         )
@@ -78,66 +78,135 @@ def initialize_db():
 class InGame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
         self.mongo_client = MongoClient(os.getenv("MONGO_URI"))
         self.db = self.mongo_client["Users"]
         self.collection = self.db["UserData"]
 
-    tax = SlashCommandGroup(
-        name="tax",
-        description="Tax Related Commands",
-    )
+    tax = SlashCommandGroup(name="tax", description="Tax Related Commands")
 
-    async def update_tax_record(self, user_id, amount, week_no):
+    async def update_tax_record(self, user_id, amount, last_pay_date, next_pay_date):
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
             cursor.execute(
                 """
-                INSERT INTO tax_data (user_id, amount, last_pay_date, week_no)
+                INSERT INTO tax_data (user_id, amount, last_pay_date, next_pay_date)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT(user_id) DO UPDATE SET
                     amount=excluded.amount,
                     last_pay_date=excluded.last_pay_date,
-                    week_no=excluded.week_no
+                    next_pay_date=excluded.next_pay_date
                 """,
-                (user_id, amount, datetime.now().date(), week_no),
+                (user_id, amount, last_pay_date, next_pay_date),
             )
             connection.commit()
         except Exception as e:
-            print(f"[ - ] InGame COG : DataBase Error : ")
+            print(f"[ - ] InGame COG : DataBase Error : {e}")
         finally:
             cursor.close()
             connection.close()
 
-    async def notify_payment(self, ctx, user_id, amount, success=True):
+    async def notify_payment(self, user_id, amount, success=True):
         try:
             user = self.bot.get_user(user_id)
             if success:
                 embed = discord.Embed(
-                    title=":white_check_mark: Payment Success",
+                    title=":white_check_mark: Tax Payment Success",
                     description=f"Paid `{amount}` Taxes",
                     color=0x00FF00,
                 )
             else:
                 embed = discord.Embed(
-                    title=":x: Payment Failed",
+                    title=":x: Tax Payment Failed",
                     description="You Do Not Have Enough Money To Pay Taxes",
                     color=0xFF0000,
                 )
             await user.send(embed=embed)
         except discord.Forbidden:
-            print(f"Could No DM The User : {user_id}")
+            print(f"Could not DM the user: {user_id}")
+
+    @tax.command(name="info", description="Get Tax Info")
+    async def tax_info(self, ctx, user: discord.Member = None):
+        await ctx.defer(ephemeral=True)
+        if user is None:
+            user = ctx.author
+
+        user_id = user.id
+        document = self.collection.find_one({"ID": user_id})
+
+        if not document:
+            embed = discord.Embed(
+                title=":x: Error",
+                description="User Not Found In Database.\nPlease Contact The Admins.",
+                color=0xFF0000,
+            )
+            return await ctx.respond(embed=embed, ephemeral=True)
+
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT amount, last_pay_date, next_pay_date FROM tax_data WHERE user_id = ?",
+                (user_id,),
+            )
+            result = cursor.fetchone()
+
+            if not result:
+                embed = discord.Embed(
+                    title=":x: Error",
+                    description="Tax Amount Not Set.\nPlease Contact The Admins.",
+                    color=0xFF0000,
+                )
+                return await ctx.respond(embed=embed, ephemeral=True)
+
+            amount, last_pay_date, next_pay_date = result
+            current_date = datetime.now().date()
+
+            embed = discord.Embed(
+                title=":moneybag: Tax Info",
+                description=f"**User:** {user.mention}\n**Amount:** {amount}\n**Last Pay Date:** {last_pay_date}\n**Next Pay Date:** {next_pay_date}",
+                color=0x00FF00,
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    @tax.command(name="update", description="Update Tax Info")
+    async def update_tax(self, ctx, user: discord.Member, amount: int):
+        await ctx.defer(ephemeral=True)
+        if ctx.author.id not in ADMINS:
+            return await ctx.respond("Pagal Hai Kaya ?!", ephemeral=True)
+
+        user_id = user.id
+        current_date = datetime.now().date()
+        next_pay_date = current_date + timedelta(days=1)
+        await self.update_tax_record(user_id, amount, current_date, next_pay_date)
+
+        embed = discord.Embed(
+            title=":white_check_mark: Success",
+            description=f"Updated `{user.display_name}`'s Taxes To `{amount}`",
+            color=0x00FF00,
+        )
+        await ctx.respond(embed=embed, ephemeral=True)
+
+        try:
+            await user.send(embed=embed)
+        except discord.Forbidden:
+            print(f"Could Not DM The User: {user_id}")
 
     @tax.command(name="add", description="Add taxes")
     async def add_tax(self, ctx, user: discord.Member, amount: int):
         await ctx.defer(ephemeral=True)
         if ctx.author.id not in ADMINS:
-            return await ctx.respond("SOHAM Ko Chutiya Samjha Hai Kaya", ephemeral=True)
+            return await ctx.respond("Pagal Hai Kaya ?!", ephemeral=True)
 
         user_id = user.id
-        week_no = datetime.now().isocalendar()[1]
-        await self.update_tax_record(user_id, amount, week_no)
+        current_date = datetime.now().date()
+        next_pay_date = current_date + timedelta(days=1)
+        await self.update_tax_record(user_id, amount, current_date, next_pay_date)
 
         embed = discord.Embed(
             title=":white_check_mark: Success",
@@ -146,11 +215,10 @@ class InGame(commands.Cog):
         )
         await ctx.respond(embed=embed, ephemeral=True)
 
-        user = self.bot.get_user(user_id)
         try:
             await user.send(embed=embed)
         except discord.Forbidden:
-            print(f"Could No DM The User : {user_id}")
+            print(f"Could Not DM The User: {user_id}")
 
     @tax.command(name="pay", description="Pay taxes")
     async def pay_tax(self, ctx):
@@ -161,203 +229,119 @@ class InGame(commands.Cog):
         if not document:
             embed = discord.Embed(
                 title=":x: Error",
-                description="User Not Registered In The Database\nPlease Contact The Admins To Get Registered",
+                description="User Not Found In Database.\nPlease Contact The Admins.",
                 color=0xFF0000,
             )
-            await ctx.respond(embed=embed, ephemeral=True)
+            return await ctx.respond(embed=embed, ephemeral=True)
 
-        else:
-            connection = get_db_connection()
-            cursor = connection.cursor()
-            week_no = datetime.now().isocalendar()[1]
+        connection = get_db_connection()
+        cursor = connection.cursor()
 
-            username = document["Username"]
-
+        try:
             cursor.execute(
-                "SELECT amount FROM tax_data WHERE user_id = ? AND week_no = ?",
-                (user_id, week_no),
+                "SELECT amount, next_pay_date FROM tax_data WHERE user_id = ?",
+                (user_id,),
             )
             result = cursor.fetchone()
+
             if not result:
                 embed = discord.Embed(
                     title=":x: Error",
-                    description="Tax Amount Not Set\nPlease Contact The Admins",
+                    description="Tax Amount Not Set.\nPlease Contact The Admins.",
                     color=0xFF0000,
                 )
-                await ctx.respond(embed=embed, ephemeral=True)
+                return await ctx.respond(embed=embed, ephemeral=True)
+
+            amount, next_pay_date = result
+            current_date = datetime.now().date()
+
+            if current_date < next_pay_date:
+                time_left = next_pay_date - current_date
+                embed = discord.Embed(
+                    title=":clock1: Tax Payment Not Due",
+                    description=f"Your Next Tax Payment Is Due {time_left.days} Days.",
+                    color=0xFFFF00,
+                )
+                return await ctx.respond(embed=embed, ephemeral=True)
+
+            # Attempt to pay taxes
+            success = await self.execute_tax_payment(ctx, user_id, amount)
+
+            if success:
+                new_next_pay_date = current_date + timedelta(days=1)
+                await self.update_tax_record(
+                    user_id, amount, current_date, new_next_pay_date
+                )
+                embed = discord.Embed(
+                    title=":white_check_mark: Tax Payment Success",
+                    description=f"Paid `{amount}` Taxes.\nNext Payment Due On {new_next_pay_date}.",
+                    color=0x00FF00,
+                )
             else:
-
-                week_no = week_no + 1
-
-                amount = result[0]
-                await self.execute_auto_payment(
-                    ctx, user_id, amount, week_no, cursor, connection
-                )
-
-            cursor.close()
-            connection.close()
-
-    @tax.command(name="info", description="Get Tax Info")
-    async def tax_info(self, ctx):
-        await ctx.defer(ephemeral=True)
-        user_id = ctx.author.id
-
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        cursor.execute(
-            "SELECT amount, last_pay_date, week_no FROM tax_data WHERE user_id = ?",
-            (user_id,),
-        )
-        result = cursor.fetchone()
-
-
-        if not result:
-            embed = discord.Embed(
-                title=":x: Error",
-                description="Tax Amount Not Set\nPlease Contact The Admins",
-                color=0xFF0000,
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-        else:
-            amount, last_pay_date, week_no = result
-            next_pay_date = result[1] + timedelta(weeks=1)
-
-            embed = discord.Embed(
-                title="Tax Info",
-                description=f"\n### Week No : `{week_no}`\n\n## Amount : `{amount}`\n## Last Pay Date : `{last_pay_date}`\n## Next Pay Date : `{next_pay_date}`",
-                color=0x00FF00,
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-
-        cursor.close()
-        connection.close()
-
-    @tax.command(name="update", description="Update Tax Info")
-    async def update_tax(self, ctx, amount: int):
-        await ctx.defer(ephemeral=True)
-        user_id = ctx.author.id
-        week_no = datetime.now().isocalendar()[1]
-
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        cursor.execute(
-            "SELECT amount FROM tax_data WHERE user_id = ? AND week_no = ?",
-            (user_id, week_no),
-        )
-        result = cursor.fetchone()
-
-        if not result:
-            embed = discord.Embed(
-                title=":x: Error",
-                description="Tax Amount Not Set\nPlease Contact The Admins",
-                color=0xFF0000,
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-        else:
-            cursor.execute(
-                """
-                UPDATE tax_data
-                SET amount = ?
-                WHERE user_id = ? AND week_no = ?
-                """,
-                (amount, user_id, week_no),
-            )
-            connection.commit()
-
-            embed = discord.Embed(
-                title=":white_check_mark: Success",
-                description=f"### Updated Tax Amount To `{amount}`",
-                color=0x00FF00,
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-
-        cursor.close()
-        connection.close()
-
-    async def execute_auto_payment(
-        self, ctx, user_id, amount, week_no, cursor, connection
-    ):
-        try:
-
-            document = self.collection.find_one({"ID": user_id})
-
-            if not document:
                 embed = discord.Embed(
-                    title=":x: Payment Failed",
-                    description="User Not Registered In The Database",
-                    color=0xFF0000,
-                )
-                await ctx.respond(embed=embed, ephemeral=True)
-
-            username = document["Username"]
-
-            cursor.execute(
-                """
-                UPDATE tax_data
-                SET last_pay_date = ?, week_no = ?
-                WHERE user_id = ?
-                """,
-                (datetime.now().date(), week_no, user_id),
-            )
-            connection.commit()
-            console_channel = self.bot.get_channel(CONSOLE_CHANNEL)
-            await console_channel.send(f"eco take {username} {amount}")
-
-            def check(message):
-                return (
-                    message.author.id == 1270255175579471963
-                    and message.channel.id == CONSOLE_CHANNEL
-                )
-
-            message = await self.bot.wait_for("message", check=check, timeout=30)
-            if message.content.startswith("The minimum balance"):
-                embed = discord.Embed(
-                    title=":x: Payment Failed",
+                    title=":x: Tax Payment Failed",
                     description="You Do Not Have Enough Money To Pay Taxes",
                     color=0xFF0000,
                 )
-                await ctx.respond(embed=embed, ephemeral=True)
 
-            if message.content.startswith("$"):
-                embed = discord.Embed(
-                    title=":white_check_mark: Payment Success",
-                    description=f"### Paid `{amount}` Taxes",
-                    color=0x00FF00,
-                )
-                await ctx.respond(embed=embed, ephemeral=True)
-        except Exception as e:
-            await ctx.respond(f"Failed To Pay Taxes : {e}", ephemeral=True)
+            await ctx.respond(embed=embed, ephemeral=True)
+            await self.notify_payment(user_id, amount, success)
+
+        finally:
+            cursor.close()
+            connection.close()
+
+    async def execute_tax_payment(self, ctx, user_id, amount):
+        document = self.collection.find_one({"ID": user_id})
+        username = document["Username"]
+
+        console_channel = self.bot.get_channel(CONSOLE_CHANNEL)
+        await console_channel.send(f"eco take {username} {amount}")
+
+        def check(message):
+            return (
+                message.author.id == 1270255175579471963
+                and message.channel.id == CONSOLE_CHANNEL
+            )
+
+        try:
+            message = await self.bot.wait_for("message", check=check, timeout=30)
+            return not message.content.startswith("The minimum balance")
+        except asyncio.TimeoutError:
+            return False
 
     @tasks.loop(hours=24)
     async def tax_auto_pay(self):
         connection = get_db_connection()
         cursor = connection.cursor()
+
         current_date = datetime.now().date()
-        week_no = datetime.now().isocalendar()[1]
 
-        cursor.execute(
-            "SELECT user_id, amount FROM tax_data WHERE last_pay_date < ? AND week_no = ?",
-            (current_date - timedelta(weeks=1), week_no),
-        )
-        users_to_pay = cursor.fetchall()
-
-        for user_id, amount in users_to_pay:
-            await self.execute_auto_payment(
-                None, user_id, amount, week_no, cursor, connection
+        try:
+            cursor.execute(
+                "SELECT user_id, amount, next_pay_date FROM tax_data WHERE next_pay_date <= ?",
+                (current_date,),
             )
+            users_to_pay = cursor.fetchall()
 
-        cursor.close()
-        connection.close()
+            for user_id, amount, _ in users_to_pay:
+                success = await self.execute_tax_payment(None, user_id, amount)
+                if success:
+                    new_next_pay_date = current_date + timedelta(days=1)
+                    await self.update_tax_record(
+                        user_id, amount, current_date, new_next_pay_date
+                    )
+                await self.notify_payment(user_id, amount, success)
+
+        finally:
+            cursor.close()
+            connection.close()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print("[ + ] InGame COG : OnReady")
-
         initialize_db()
         print("[ + ] Tax Database Initialized")
-
         if not self.tax_auto_pay.is_running():
             self.tax_auto_pay.start()
 
