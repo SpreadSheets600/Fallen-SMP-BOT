@@ -482,6 +482,44 @@ class Crypto(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
             print(f"[ - ] Crypto COG : Error : {e}")
 
+    @crypto.command(name="reset", description="Reset User Portfolio")
+    async def reset(self, ctx, user: discord.Member = None):
+        await ctx.defer(ephemeral=True)
+
+        if user is None or ctx.author.id not in ADMINS:
+            user = ctx.author
+
+        try:
+            for symbol in ["ETH", "BTC", "BNB", "SOL", "AVAX"]:
+                document = self.collection.find_one({"ID": user.id})
+
+                if document:
+                    user_data = document
+                    user_data["CryptoAmount"][symbol] = 0
+                    user_data["CryptoBuyPrice"][f"{symbol}_P"] = 0
+
+                    self.collection.update_one(
+                        {"ID": user.id}, {"$set": user_data}, upsert=True
+                    )
+
+            embed = discord.Embed(
+                title="Portfolio Reset",
+                description="Your Portfolio Has Been Reset",
+                color=0xD5E4CF,
+            )
+
+            await ctx.respond(embed=embed, ephemeral=True)
+
+        except Exception as e:
+            print(f"[ - ] Crypto COG : Error : {e}")
+            await ctx.respond(
+                f"[ - ] Crypto COG : Error : \n```{e}```",
+                ephemeral=True,
+                delete_after=5,
+            )
+            ErrorChannel = self.bot.get_channel(ERROR_CHANNEL)
+            await ErrorChannel.send(f"[ - ] Crypto COG : Error : \n```{e}```")
+
 
 def setup(bot):
     bot.add_cog(Crypto(bot))
