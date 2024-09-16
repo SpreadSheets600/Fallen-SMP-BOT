@@ -326,7 +326,7 @@ class Crypto(commands.Cog):
                 )
                 return await ctx.respond(embed=embed, ephemeral=True)
 
-            if "Error:" in m.content:
+            if "Error:" in m.content.split(" "):
                 embed = discord.Embed(
                     title="Purchase Unsuccessful",
                     description="### Insufficient Balance",
