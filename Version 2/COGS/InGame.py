@@ -324,14 +324,17 @@ class InGame(commands.Cog):
             )
             users_to_pay = cursor.fetchall()
 
-            for user_id, amount, _ in users_to_pay:
-                success = await self.execute_tax_payment(None, user_id, amount)
-                if success:
-                    new_next_pay_date = current_date + timedelta(days=1)
-                    await self.update_tax_record(
-                        user_id, amount, current_date, new_next_pay_date
-                    )
-                await self.notify_payment(user_id, amount, success)
+            for user_id, amount, next_pay_date in users_to_pay:
+                if current_date >= next_pay_date:
+                    success = await self.execute_tax_payment(None, user_id, amount)
+
+                    if success:
+                        new_next_pay_date = current_date + timedelta(weeks=1)
+                        await self.update_tax_record(
+                            user_id, amount, current_date, new_next_pay_date
+                        )
+
+                    await self.notify_payment(user_id, amount, success)
 
         finally:
             cursor.close()

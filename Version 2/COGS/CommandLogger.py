@@ -18,12 +18,19 @@ class CommandLogger(commands.Cog):
             command = ctx.command
             current_time = int(time.time())
 
+            channel = ctx.channel
+
+            try:
+                channel_mention = channel.mention
+            except Exception:
+                channel_mention = channel.name
+
             embed = discord.Embed(
                 title="Slash Command Executed",
                 description=(
                     f"**User :** {user.mention} ( `{user.id}` )\n\n"
                     f"**Command :** `{command}`\n"
-                    f"**Channel :** {ctx.channel.mention}\n\n"
+                    f"**Channel :** {channel_mention}\n\n"
                     f"**Time :** <t:{current_time}:F>"
                 ),
                 color=discord.Color.blue(),
