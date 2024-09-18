@@ -328,7 +328,7 @@ class InGame(commands.Cog):
 
                 next_pay_date = datetime.strptime(next_pay_date, "%Y-%m-%d").date()
 
-                if current_date >= next_pay_date:
+                if current_date > next_pay_date:
                     success = await self.execute_tax_payment(None, user_id, amount)
 
                     if success:
@@ -347,6 +347,14 @@ class InGame(commands.Cog):
     async def wts(self, ctx, item: str, price: int, amount: int = 1):
         await ctx.defer()
 
+        if ctx.channel.id != 1285980449360973835:
+            embed = discord.Embed(
+                title=":x: Error",
+                description="Please Use The <#1285980449360973835> For Market Transactions",
+                color=0xFF0000,
+            )
+            return await ctx.respond(embed=embed, ephemeral=True)
+
         user_id = ctx.author.id
         document = self.collection.find_one({"ID": user_id})
 
@@ -364,24 +372,34 @@ class InGame(commands.Cog):
             color=0x00FF00,
         )
 
+        embed.add_field(name="Amount", value=str(amount), inline=False)
+        embed.add_field(name="Price", value=str(price), inline=False)
+
         embed.add_field(
             name="Seller",
             value=f"{ctx.author.mention} ({document['Username']})",
-            inline=True,
+            inline=False,
         )
-        embed.add_field(name="Amount", value=str(amount), inline=True)
-        embed.add_field(name="Price", value=str(price), inline=True)
 
         await ctx.respond(embed=embed)
 
-        thread = await ctx.create_thread(
+        msg = await ctx.interaction.original_response()
+
+        thread = await msg.create_thread(
             name=f"WTS : {item} : {ctx.author.display_name}"
         )
-        await thread.send(f"Item: {item}\nAmount: {amount}\nPrice: {price}")
 
     @commands.slash_command(name="wtb", description="Buy An Item")
     async def wtb(self, ctx, item: str, price: int, amount: int = 1):
         await ctx.defer()
+
+        if ctx.channel.id != 1285980449360973835:
+            embed = discord.Embed(
+                title=":x: Error",
+                description="Please Use The <#1285980449360973835> For Market Transactions",
+                color=0xFF0000,
+            )
+            return await ctx.respond(embed=embed, ephemeral=True)
 
         user_id = ctx.author.id
         document = self.collection.find_one({"ID": user_id})
@@ -400,20 +418,22 @@ class InGame(commands.Cog):
             color=0x00FF00,
         )
 
+        embed.add_field(name="Amount", value=str(amount), inline=False)
+        embed.add_field(name="Price", value=str(price), inline=False)
+
         embed.add_field(
             name="Buyer",
             value=f"{ctx.author.mention} ({document['Username']})",
-            inline=True,
+            inline=False,
         )
-        embed.add_field(name="Amount", value=str(amount), inline=True)
-        embed.add_field(name="Price", value=str(price), inline=True)
 
         await ctx.respond(embed=embed)
 
-        thread = await ctx.create_thread(
+        msg = await ctx.interaction.original_response()
+
+        thread = await msg.create_thread(
             name=f"WTB : {item} : {ctx.author.display_name}"
         )
-        await thread.send(f"Item: {item}\nAmount: {amount}\nPrice: {price}")
 
     @commands.Cog.listener()
     async def on_ready(self):
