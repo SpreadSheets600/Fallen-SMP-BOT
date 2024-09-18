@@ -325,6 +325,9 @@ class InGame(commands.Cog):
             users_to_pay = cursor.fetchall()
 
             for user_id, amount, next_pay_date in users_to_pay:
+
+                next_pay_date = datetime.strptime(next_pay_date, "%Y-%m-%d").date()
+
                 if current_date >= next_pay_date:
                     success = await self.execute_tax_payment(None, user_id, amount)
 
