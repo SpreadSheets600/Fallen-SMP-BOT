@@ -343,7 +343,7 @@ class InGame(commands.Cog):
             cursor.close()
             connection.close()
 
-    @commands.slash_command(name="WTS", description="Sell An Item")
+    @commands.slash_command(name="wts", description="Sell An Item")
     async def wts(self, ctx, item: str, price: int, amount: int = 1):
         await ctx.defer()
 
@@ -379,7 +379,7 @@ class InGame(commands.Cog):
         )
         await thread.send(f"Item: {item}\nAmount: {amount}\nPrice: {price}")
 
-    @commands.slash_command(name="WTB", description="Buy An Item")
+    @commands.slash_command(name="wtb", description="Buy An Item")
     async def wtb(self, ctx, item: str, price: int, amount: int = 1):
         await ctx.defer()
 
