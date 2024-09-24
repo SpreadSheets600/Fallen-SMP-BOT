@@ -647,7 +647,7 @@ class Moderation(commands.Cog):
 
                 embed.add_field(
                     name="BEDROCK",
-                    value=("**IP :** play.fallensmp.xyz\n" "**PORT :** 25565"),
+                    value=("**IP :** play.fallensmp.xyz\n" "**PORT :** 6000"),
                     inline=False,
                 )
 
@@ -659,7 +659,7 @@ class Moderation(commands.Cog):
 
                 embed.add_field(
                     name="Alternate IPs",
-                    value=("**ALT IP :** in4-b.potenfyr.in"),
+                    value=("**ALT IP :** razor1.arnolhosting.cloud:6000"),
                     inline=False,
                 )
 
