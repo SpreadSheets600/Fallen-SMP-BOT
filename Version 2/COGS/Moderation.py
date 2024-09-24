@@ -40,7 +40,7 @@ class Moderation(commands.Cog):
         self.connection.commit()
         self.connection.close()
 
-    @commands.command(name="ban", aliases=["b"])
+    @commands.slash_command(name="ban", aliases=["b"])
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, *, reason=None):
 
@@ -85,7 +85,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"ban {username} {reason}")
 
-    @commands.command(name="unban", aliases=["ub"])
+    @commands.slash_command(name="unban", aliases=["ub"])
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, *, member):
 
@@ -129,7 +129,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"unban {username}")
 
-    @commands.command(name="kick", aliases=["k"])
+    @commands.slash_command(name="kick", aliases=["k"])
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason=None):
 
@@ -163,7 +163,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"kick {username} {reason}")
 
-    @commands.command(name="mute", aliases=["m"])
+    @commands.slash_command(name="mute", aliases=["m"])
     @commands.has_permissions(manage_roles=True)
     async def mute(self, ctx, member: discord.Member, *, reason=None):
 
@@ -198,7 +198,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"mute {username} {reason}")
 
-    @commands.command(name="unmute", aliases=["um"])
+    @commands.slash_command(name="unmute", aliases=["um"])
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, member: discord.Member):
 
@@ -227,7 +227,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"unmute {username}")
 
-    @commands.command(name="warn", aliases=["w"])
+    @commands.slash_command(name="warn", aliases=["w"])
     @commands.has_permissions(manage_messages=True)
     async def warn(self, ctx, member: discord.Member, *, reason=None):
 
@@ -270,7 +270,7 @@ class Moderation(commands.Cog):
 
         await self.close_database()
 
-    @commands.command(name="warnings", aliases=["warns"])
+    @commands.slash_command(name="warnings", aliases=["warns"])
     @commands.has_permissions(manage_messages=True)
     async def warnings(self, ctx, member: discord.Member):
 
@@ -297,7 +297,7 @@ class Moderation(commands.Cog):
 
         await self.close_database()
 
-    @commands.command(name="clearwarns", aliases=["cw"])
+    @commands.slash_command(name="clearwarns", aliases=["cw"])
     @commands.has_permissions(manage_messages=True)
     async def clearwarns(self, ctx, member: discord.Member):
 
@@ -340,7 +340,7 @@ class Moderation(commands.Cog):
         console_channel = self.bot.get_channel(1263898954999922720)
         await console_channel.send(f"clearwarns {username}")
 
-    @commands.command(name="lock", aliases=["l"])
+    @commands.slash_command(name="lock", aliases=["l"])
     @commands.has_permissions(manage_channels=True)
     async def lock(self, ctx, channel: discord.TextChannel = None):
 
@@ -357,7 +357,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="unlock", aliases=["ul"])
+    @commands.slash_command(name="unlock", aliases=["ul"])
     @commands.has_permissions(manage_channels=True)
     async def unlock(self, ctx, channel: discord.TextChannel = None):
 
@@ -374,7 +374,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="purge", aliases=["clear", "prune"])
+    @commands.slash_command(name="purge", aliases=["clear", "prune"])
     @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx, amount: int):
 
@@ -388,7 +388,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="slowmode", aliases=["sm"])
+    @commands.slash_command(name="slowmode", aliases=["sm"])
     @commands.has_permissions(manage_channels=True)
     async def slowmode(self, ctx, seconds: int, channel: discord.TextChannel = None):
 
@@ -405,7 +405,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="lockdown", aliases=["ld"])
+    @commands.slash_command(name="lockdown", aliases=["ld"])
     @commands.has_permissions(manage_channels=True)
     async def lockdown(self, ctx):
 
@@ -419,7 +419,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="unlockdown", aliases=["uld"])
+    @commands.slash_command(name="unlockdown", aliases=["uld"])
     @commands.has_permissions(manage_channels=True)
     async def unlockdown(self, ctx):
 
@@ -433,7 +433,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="banlist", aliases=["bl"])
+    @commands.slash_command(name="banlist", aliases=["bl"])
     @commands.has_permissions(ban_members=True)
     async def banlist(self, ctx):
 
@@ -460,7 +460,7 @@ class Moderation(commands.Cog):
 
         await self.close_database()
 
-    @commands.command(name="muteall", aliases=["ma"])
+    @commands.slash_command(name="muteall", aliases=["ma"])
     @commands.has_permissions(manage_channels=True)
     async def muteall(self, ctx):
 
@@ -476,7 +476,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="unmuteall", aliases=["uma"])
+    @commands.slash_command(name="unmuteall", aliases=["uma"])
     @commands.has_permissions(manage_channels=True)
     async def unmuteall(self, ctx):
 
@@ -492,7 +492,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="lockall", aliases=["la"])
+    @commands.slash_command(name="lockall", aliases=["la"])
     @commands.has_permissions(manage_channels=True)
     async def lockall(self, ctx):
 
@@ -507,7 +507,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="unlockall", aliases=["ula"])
+    @commands.slash_command(name="unlockall", aliases=["ula"])
     @commands.has_permissions(manage_channels=True)
     async def unlockall(self, ctx):
 
@@ -522,7 +522,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="slowmodeall", aliases=["sma"])
+    @commands.slash_command(name="slowmodeall", aliases=["sma"])
     @commands.has_permissions(manage_channels=True)
     async def slowmodeall(self, ctx, seconds: int):
 
@@ -537,7 +537,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="lockdownall", aliases=["lda"])
+    @commands.slash_command(name="lockdownall", aliases=["lda"])
     @commands.has_permissions(manage_channels=True)
     async def lockdownall(self, ctx):
 
@@ -552,7 +552,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="unlockdownall", aliases=["ulda"])
+    @commands.slash_command(name="unlockdownall", aliases=["ulda"])
     @commands.has_permissions(manage_channels=True)
     async def unlockdownall(self, ctx):
 
@@ -567,7 +567,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="purgeall", aliases=["clearall", "pruneall"])
+    @commands.slash_command(name="purgeall", aliases=["clearall", "pruneall"])
     @commands.has_permissions(manage_messages=True)
     async def purgeall(self, ctx, amount: int):
 
@@ -582,7 +582,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name="banall", aliases=["ball"])
+    @commands.slash_command(name="banall", aliases=["ball"])
     async def banall(self, ctx):
         if ctx.author.id not in ADMINS:
             return await ctx.send("Are You Mad ?!\n## NO FUCK OFF")

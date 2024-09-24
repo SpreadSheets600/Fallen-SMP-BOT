@@ -518,7 +518,7 @@ class WhitelistApplication(discord.ui.View):
 
         if interaction.user.id != self.interaction_user.id:
 
-            await interaction.folloup.send(
+            await interaction.followup.send(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
@@ -529,7 +529,7 @@ class WhitelistApplication(discord.ui.View):
                 color=0x2F3136,
             )
 
-            await interaction.folloup.send(
+            await interaction.followup.send(
                 embed=embed, ephemeral=True, view=GuideMenu()
             )
 
@@ -539,7 +539,7 @@ class WhitelistApplication(discord.ui.View):
 
         if interaction.user.id != self.interaction_user.id:
 
-            await interaction.folloup.send(
+            await interaction.followup.send(
                 "You Are Not Allowed To Use This Button", ephemeral=True
             )
 
